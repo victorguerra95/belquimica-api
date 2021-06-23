@@ -1,0 +1,22 @@
+{
+    "maxparams": 5,
+    "maxdepth": 5,
+    "maxstatements": 25,
+    "maxcomplexity": 10,
+	"indent": 4,
+	"trailing": true,
+    "boss": false,
+    "curly": false,
+    "devel": false,
+    "immed": true,
+    "laxbreak": false,
+	"laxcomma": true,
+    "newcap": true,
+    "noempty": false,
+	"unused": "vars",
+    "strict": false,
+	"undef": "vars",
+	"predef": ["module", "require", "console", "document", "Set", "setTimeout", "process"],
+	"esversion": 6,
+	"newcap" : false
+}
