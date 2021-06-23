@@ -4,14 +4,14 @@ module.exports = function(app) {
 	const utils = require('../utils/utils')(app);
 	const filesConfig = require('../utils/filesConfig')(app);
 	const ValidateParams = require('./routes_validations');
-	const ControllerVideo = require('../controllers/videos');
+	const ControllerClient = require('../controllers/client');
 
 	let validateParams;
-	let controllerVideo;
+	let controllerClient;
 
 	function setUp() {
 		validateParams = new ValidateParams(app);
-		controllerVideo = new ControllerVideo(app);
+		controllerClient = new ControllerClient(app);
 
 		routesDefinitions();
 		app.use(function(err, req, res, next) {
@@ -21,15 +21,8 @@ module.exports = function(app) {
 
 	function routesDefinitions() {
 
-		app.route('/api/createVideo')
-		.post(controllerVideo.createVideo);
-
-		app.route('/api/media/sign')
-		.get(controllerVideo.mediaSign);
-
-		app.route('/api/media/:token')
-		.put(controllerVideo.mediaUpdate)
-		.get(controllerVideo.getMedia);
+		app.route('/api/private/admin/clients')
+		.get(controllerClient.getClients);
 
 		/*
 		app.route('/api/changeTextChallenge/:text')

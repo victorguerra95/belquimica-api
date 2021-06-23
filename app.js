@@ -3,6 +3,13 @@ module.exports = function App() {
 
 	var cors = require('cors');
 
+	const admin = require('firebase-admin');
+	var serviceAccount = require("./belquimica-pro-firebase-adminsdk-tfgqr-d6da9f87a1.json");
+    admin.initializeApp({
+		credential: admin.credential.cert(serviceAccount),
+        //credential: admin.credential.applicationDefault(),
+    });
+
 	const express = require('express'),
 		bodyParser = require('body-parser'),
 		expressValidator = require('express-validator'),
@@ -33,7 +40,29 @@ module.exports = function App() {
 		req.connection.remoteAddress ||
 		req.socket.remoteAddress ||
 		req.connection.socket.remoteAddress;
-		next();
+
+		if(req.url.match("/private")){
+
+			var token = req.headers['authorization'];
+			if (!token) return res.status(401).json({ status: 'error', auth: false, error: 'no_token_provided' });
+
+			admin
+			.auth()
+			.verifyIdToken(token)
+			.then((decodedToken) => {
+				//console.log("decodedToken: " + JSON.stringify(decodedToken));
+				req.firebase_uid = decodedToken.uid;
+				next();
+			})
+			.catch((error) => {
+				console.log("error: " + error);
+				return res.status(401).json({ status: 'error', auth: false, error: 'failed_authenticate_token' });
+			});
+
+		}else{
+			next();
+		}
+
 	});
 	//app.ipInfo = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
