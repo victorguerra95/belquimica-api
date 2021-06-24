@@ -24,7 +24,8 @@ module.exports = function(app) {
 		app.route('/api/private/admin/clients')
 		.post(controllerClient.createClient)
 		.get(controllerClient.getClients)
-		.put(controllerClient.updateClient);
+		.put(controllerClient.updateClient)
+		.delete(controllerClient.deleteClient);
 
 		/*
 		app.route('/api/changeTextChallenge/:text')

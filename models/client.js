@@ -1,3 +1,5 @@
+const { filter } = require('lodash');
+
 module.exports = function(app) {
 	'use strict';
 
@@ -52,9 +54,19 @@ module.exports = function(app) {
                                         model: Point
                                     },
                                     {
-                                        model: ClientUser
+                                        model: ClientUser,
+                                        include: [
+                                            {
+                                                model: User
+                                            }
+                                        ]
                                     }
-                                ]
+                                ],
+                                order: [ 
+                                    [ { model: Contact }, 'id', 'ASC' ],
+                                    [ { model: Point }, 'id', 'ASC' ],
+                                    [ { model: ClientUser }, 'id', 'ASC' ]
+                                ],
                             }).then(client_data => {
                 
                                 resolve({code: 200, response: client_data });
@@ -91,11 +103,16 @@ module.exports = function(app) {
 
                             Client.findAll({
                                 where: whereStament,
+                                include: [
+                                    {
+                                        model: Point
+                                    }
+                                ],
                                 order: [
                                     ["name", "ASC"]
                                 ],
                                 offset: off,
-                                limit: 30
+                                limit: 30,
                             }).then(clients => {
                 
                                 Client.count({
@@ -145,6 +162,10 @@ module.exports = function(app) {
                             }
                         });
 
+                        if(new_client.name != null && new_client.name.length > 0){
+                            new_client.name_term = formatTerm(new_client.name);
+                        }
+
                         Client.create(new_client).then(client_data => {
                             resolve({code: 200, response: client_data });
                         });
@@ -188,81 +209,472 @@ module.exports = function(app) {
                                     }
                                 });
 
+                                if(data_to_update.name != null && data_to_update.name.length > 0){
+                                    data_to_update.name_term = formatTerm(data_to_update.name);
+                                }
+
                                 Client.update(data_to_update, {where:  {id: filter.client_id} }).then(itemDataUpdate => {	
                                     resolve({code: 200, response: true});
                                 });
 
-                            }else if(filter.data == "contact"){
-                                //create
-                                //edit
-                                //delete
+                            }else if(filter.data == "contact" || filter.data == "point"){
 
-                                if(filter.action == "delete"){
-                                }else{
+                                let contact_data = { client_id: filter.client_id };
+                                let parameters_parser_arr = null;
+                                let entity_db = null;
 
-                                    let contact_data = { client_id: filter.client_id };
-                                    let parameters_parser_arr = ["name", "email", "sector"];
-                                    parameters_parser_arr.forEach(param => {
-                                        if(data[param] != null){
-                                            contact_data[param] = data[param];
-                                        }
-                                    });
+                                if(filter.data == "contact"){
+                                    parameters_parser_arr = ["name", "email", "sector"];
+                                    entity_db = Contact;
 
-                                    if(filter.action == "create"){
-                                        Contact.create(contact_data).then(data_created => {
-                                            Client.findOne({
-                                                where: {
-                                                    id: filter.client_id
-                                                },
-                                                include: [
-                                                    {
-                                                        model: Contact
-                                                    },
-                                                    {
-                                                        model: Point
-                                                    },
-                                                    {
-                                                        model: ClientUser
-                                                    }
-                                                ]
-                                            }).then(client_result => {
-                                                resolve({ code: 200, response: client_result });
-                                            });
-                                        });
-                                    }else if(filter.action == "update"){
-                                        Contact.update(contact_data, {where:  {id: data.id} }).then(itemDataUpdate => {	
-                                            Client.findOne({
-                                                where: {
-                                                    id: filter.client_id
-                                                },
-                                                include: [
-                                                    {
-                                                        model: Contact
-                                                    },
-                                                    {
-                                                        model: Point
-                                                    },
-                                                    {
-                                                        model: ClientUser
-                                                    }
-                                                ]
-                                            }).then(client_result => {
-                                                resolve({ code: 200, response: client_result });
-                                            });
-                                        });
-                                    }
+                                }else if(filter.data == "point"){
+                                    parameters_parser_arr = ["address", "systems"];
+                                    entity_db = Point;
+
                                 }
 
-                            }else if(filter.data == "point"){
-                                //create
-                                //edit
-                                //delete
+                                parameters_parser_arr.forEach(param => {
+                                    if(data[param] != null){
+                                        contact_data[param] = data[param];
+                                    }
+                                });
+
+                                if(filter.action == "create"){
+                                    entity_db.create(contact_data).then(data_created => {
+                                        Client.findOne({
+                                            where: {
+                                                id: filter.client_id
+                                            },
+                                            include: [
+                                                {
+                                                    model: Contact
+                                                },
+                                                {
+                                                    model: Point
+                                                },
+                                                {
+                                                    model: ClientUser,
+                                                    include: [
+                                                        {
+                                                            model: User
+                                                        }
+                                                    ]
+                                                }
+                                            ],
+                                            order: [ 
+                                                [ { model: Contact }, 'id', 'ASC' ],
+                                                [ { model: Point }, 'id', 'ASC' ],
+                                                [ { model: ClientUser }, 'id', 'ASC' ]
+                                            ],
+                                        }).then(client_result => {
+                                            resolve({ code: 200, response: client_result });
+                                        });
+                                    });
+                                }else if(filter.action == "update"){
+                                    entity_db.update(contact_data, {where:  {id: data.id} }).then(itemDataUpdate => {	
+                                        Client.findOne({
+                                            where: {
+                                                id: filter.client_id
+                                            },
+                                            include: [
+                                                {
+                                                    model: Contact
+                                                },
+                                                {
+                                                    model: Point
+                                                },
+                                                {
+                                                    model: ClientUser,
+                                                    include: [
+                                                        {
+                                                            model: User
+                                                        }
+                                                    ]
+                                                }
+                                            ],
+                                            order: [ 
+                                                [ { model: Contact }, 'id', 'ASC' ],
+                                                [ { model: Point }, 'id', 'ASC' ],
+                                                [ { model: ClientUser }, 'id', 'ASC' ]
+                                            ],
+                                        }).then(client_result => {
+                                            resolve({ code: 200, response: client_result });
+                                        });
+                                    });
+                                }else if(filter.action == "delete"){
+                                    entity_db.destroy({
+                                        force: true,
+                                        where: {
+                                            id: data.id
+                                        }
+                                    }).then(destroyData => {
+                                        Client.findOne({
+                                            where: {
+                                                id: filter.client_id
+                                            },
+                                            include: [
+                                                {
+                                                    model: Contact
+                                                },
+                                                {
+                                                    model: Point
+                                                },
+                                                {
+                                                    model: ClientUser,
+                                                    include: [
+                                                        {
+                                                            model: User
+                                                        }
+                                                    ]
+                                                }
+                                            ],
+                                            order: [ 
+                                                [ { model: Contact }, 'id', 'ASC' ],
+                                                [ { model: Point }, 'id', 'ASC' ],
+                                                [ { model: ClientUser }, 'id', 'ASC' ]
+                                            ],
+                                        }).then(client_result => {
+                                            resolve({ code: 200, response: client_result });
+                                        });
+                                    });
+                                }
+
                             }else if(filter.data == "user"){
-                                //create
-                                //edit
-                                //delete
+
+                                if(filter.action == "create"){
+
+                                    data.user.email = data.user.email.trim();
+                                    data.user.email = data.user.email.toLowerCase();
+
+                                    admin
+                                    .auth()
+                                    .createUser({
+                                        email: data.user.email,
+                                        password: data.user.password
+                                    })
+                                    .then((userRecordFirebase) => {
+                                        
+                                        User.create({
+                                            email: data.user.email,
+                                            firebase_uid: userRecordFirebase.uid,
+                                            user_type_id: 2
+                                        }).then(userCreated => {	
+                                            
+                                            ClientUser.create({
+                                                user_id: userCreated.id,
+                                                client_id: filter.client_id
+                                            }).then(clientUserCreated => {	
+                                                
+                                                Client.findOne({
+                                                    where: {
+                                                        id: filter.client_id
+                                                    },
+                                                    include: [
+                                                        {
+                                                            model: Contact
+                                                        },
+                                                        {
+                                                            model: Point
+                                                        },
+                                                        {
+                                                            model: ClientUser,
+                                                            include: [
+                                                                {
+                                                                    model: User
+                                                                }
+                                                            ]
+                                                        }
+                                                    ],
+                                                    order: [ 
+                                                        [ { model: Contact }, 'id', 'ASC' ],
+                                                        [ { model: Point }, 'id', 'ASC' ],
+                                                        [ { model: ClientUser }, 'id', 'ASC' ]
+                                                    ],
+                                                }).then(client_result => {
+                                                    resolve({ code: 200, response: client_result });
+                                                });
+
+                                            });
+
+                                        });
+                                    })
+                                    .catch((error) => {
+                                        resolve({code: 500, message: error.code});
+                                        //auth/email-already-exists
+                                    });
+
+                                }else if(filter.action == "update"){
+
+                                    data.user.email = data.user.email.trim();
+                                    data.user.email = data.user.email.toLowerCase();
+
+                                    User.findOne({
+                                        where: {
+                                            id: data.user.id
+                                        }
+                                    }).then(getUserDb => {	
+
+                                        var changes_user = {
+                                            password: data.user.password
+                                        };
+                                        
+                                        if(data.user.email != getUserDb.email){
+                                            changes_user.email = data.user.email;
+                                        }
+
+                                        admin
+                                        .auth()
+                                        .updateUser(data.user.firebase_uid, changes_user)
+                                        .then((userRecord) => {
+
+                                            if(changes_user.email != null && changes_user.email.length > 0){
+                                                User.update({ email: changes_user.email },{
+                                                    where:  {
+                                                        id: data.user.id
+                                                    } 
+                                                }).then(itemDataUpdate => {	
+                                                    
+                                                    Client.findOne({
+                                                        where: {
+                                                            id: filter.client_id
+                                                        },
+                                                        include: [
+                                                            {
+                                                                model: Contact
+                                                            },
+                                                            {
+                                                                model: Point
+                                                            },
+                                                            {
+                                                                model: ClientUser,
+                                                                include: [
+                                                                    {
+                                                                        model: User
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ],
+                                                        order: [ 
+                                                            [ { model: Contact }, 'id', 'ASC' ],
+                                                            [ { model: Point }, 'id', 'ASC' ],
+                                                            [ { model: ClientUser }, 'id', 'ASC' ]
+                                                        ],
+                                                    }).then(client_result => {
+                                                        resolve({ code: 200, response: client_result });
+                                                    });
+    
+                                                });
+                                            }else{
+                                                Client.findOne({
+                                                    where: {
+                                                        id: filter.client_id
+                                                    },
+                                                    include: [
+                                                        {
+                                                            model: Contact
+                                                        },
+                                                        {
+                                                            model: Point
+                                                        },
+                                                        {
+                                                            model: ClientUser,
+                                                            include: [
+                                                                {
+                                                                    model: User
+                                                                }
+                                                            ]
+                                                        }
+                                                    ],
+                                                    order: [ 
+                                                        [ { model: Contact }, 'id', 'ASC' ],
+                                                        [ { model: Point }, 'id', 'ASC' ],
+                                                        [ { model: ClientUser }, 'id', 'ASC' ]
+                                                    ],
+                                                }).then(client_result => {
+                                                    resolve({ code: 200, response: client_result });
+                                                });
+                                            }
+                                        })
+                                        .catch((error) => {
+                                            resolve({code: 500, message: error.code});
+                                        });
+
+                                    });
+
+                                }else if(filter.action == "delete"){
+
+                                    ClientUser.findOne({
+                                        where: {
+                                            id: data.id
+                                        },
+                                        include: [
+                                            {
+                                                model: User
+                                            }
+                                        ]
+                                    }).then(clientUserDb => {	
+
+                                        admin
+                                        .auth()
+                                        .deleteUser(clientUserDb.user.firebase_uid)
+                                        .then(() => {
+                                            
+                                            User.destroy({
+                                                where: {
+                                                    id: clientUserDb.user.id
+                                                },
+                                                force: true
+                                            }).then(removeUserData => {	
+                                                
+                                                ClientUser.destroy({
+                                                    where: {
+                                                        id: clientUserDb.id
+                                                    },
+                                                    force: true
+                                                }).then(removeClientUserData => {	
+                                                    
+                                                    Client.findOne({
+                                                        where: {
+                                                            id: filter.client_id
+                                                        },
+                                                        include: [
+                                                            {
+                                                                model: Contact
+                                                            },
+                                                            {
+                                                                model: Point
+                                                            },
+                                                            {
+                                                                model: ClientUser,
+                                                                include: [
+                                                                    {
+                                                                        model: User
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ],
+                                                        order: [ 
+                                                            [ { model: Contact }, 'id', 'ASC' ],
+                                                            [ { model: Point }, 'id', 'ASC' ],
+                                                            [ { model: ClientUser }, 'id', 'ASC' ]
+                                                        ],
+                                                    }).then(client_result => {
+                                                        resolve({ code: 200, response: client_result });
+                                                    });
+        
+                                                });
+
+                                            });
+                                        })
+                                        .catch((error) => {
+                                            resolve({code: 500, message: error.code});
+                                        });
+
+                                    });
+
+                                    
+                                }
                             }
+
+                        }else{
+                            resolve({code: 500, message: "unexpected_error"});
+                        }
+
+                    }else{
+                        resolve({code: 500, message: "unexpected_error"});
+                    }
+
+                });
+                
+            } catch (error) {
+                resolve({code: 500, message: "unexpected_error"});
+            }
+
+        });
+    }
+
+    function deleteClient(firebase_uid, filter) {
+
+        return new Promise((resolve, reject) => {
+
+            try {
+
+                User.findOne({
+                    where: {
+                        firebase_uid: firebase_uid
+                    }
+                }).then(userData => {	
+
+                    if(userData != null){
+
+                        if(filter.client_id){
+
+                            Client.destroy({
+                                where: {
+                                    id: filter.client_id
+                                },
+                                force: true
+                            }).then(removeDataResult => {	
+                                resolve({ code: 200, response: removeDataResult });
+                            });
                             
+                            /*
+                            admin
+                            .auth()
+                            .deleteUser(clientUserDb.user.firebase_uid)
+                            .then(() => {
+                                
+                                User.destroy({
+                                    where: {
+                                        id: clientUserDb.user.id
+                                    },
+                                    force: true
+                                }).then(removeUserData => {	
+                                    
+                                    ClientUser.destroy({
+                                        where: {
+                                            id: clientUserDb.id
+                                        },
+                                        force: true
+                                    }).then(removeClientUserData => {	
+                                        
+                                        Client.findOne({
+                                            where: {
+                                                id: filter.client_id
+                                            },
+                                            include: [
+                                                {
+                                                    model: Contact
+                                                },
+                                                {
+                                                    model: Point
+                                                },
+                                                {
+                                                    model: ClientUser,
+                                                    include: [
+                                                        {
+                                                            model: User
+                                                        }
+                                                    ]
+                                                }
+                                            ],
+                                            order: [ 
+                                                [ { model: Contact }, 'id', 'ASC' ],
+                                                [ { model: Point }, 'id', 'ASC' ],
+                                                [ { model: ClientUser }, 'id', 'ASC' ]
+                                            ],
+                                        }).then(client_result => {
+                                            resolve({ code: 200, response: client_result });
+                                        });
+
+                                    });
+
+                                });
+                            })
+                            .catch((error) => {
+                                resolve({code: 500, message: error.code});
+                            });*/
+
 
                         }else{
                             resolve({code: 500, message: "unexpected_error"});
@@ -301,9 +713,31 @@ module.exports = function(app) {
 	    return text;                 
 	}
 
+    function formatTerm (text){       
+	    text = text.toLowerCase();                     
+        text = text.replace(new RegExp('[ ]','gi'), '');
+	    text = text.replace(new RegExp('[ÁÀÂÃ]','gi'), 'a');
+	    text = text.replace(new RegExp('[ÉÈÊ]','gi'), 'e');
+	    text = text.replace(new RegExp('[ÍÌÎ]','gi'), 'i');
+	    text = text.replace(new RegExp('[ÓÒÔÕ]','gi'), 'o');
+	    text = text.replace(new RegExp('[ÚÙÛ]','gi'), 'u');
+	    text = text.replace(new RegExp('[Ç]','gi'), 'c');
+	    text = text.replace(new RegExp('[Ç]','gi'), 'c');
+		text = text.replace(new RegExp('[-]','gi'), '');
+		text = text.replace(new RegExp('[(]','gi'), '');
+		text = text.replace(new RegExp('[)]','gi'), '');
+		text = text.replace(new RegExp('[.]','gi'), '');
+		text = text.replace(new RegExp('[,]','gi'), '');
+		text = text.replace(new RegExp('[/]','gi'), '');
+		text = text.replace(new RegExp('[*]','gi'), '');
+		text = text.replace(new RegExp('[_]','gi'), '');
+	    return text;                 
+	}
+
 	return {
         getClients,
         createClient,
-        updateClient
+        updateClient,
+        deleteClient
 	};
 };

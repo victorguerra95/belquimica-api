@@ -49,9 +49,25 @@ module.exports = function(app) {
 		
     }
 
+    function deleteClient(req, res, next) {
+        
+        const model = new Model(app);
+		model.deleteClient(req.firebase_uid, req.query).then(data => {
+
+            if(data.code == 200){
+                return res.status(data.code).json(utils.responseSuccess(data.response));
+            }else{
+                return res.status(data.code).json(utils.responseError(data));
+            }
+
+        }).catch(next);
+		
+    }
+
 	return {
         getClients,
         createClient,
-        updateClient
+        updateClient,
+        deleteClient
 	};
 };

@@ -82,16 +82,16 @@ module.exports = function Database(app) {
 		UserType.hasMany(User);
 
 		ClientUser.belongsTo(User);
-		ClientUser.belongsTo(Client);
+		ClientUser.belongsTo(Client, {onDelete: 'CASCADE'});
 		Client.hasMany(ClientUser);
 
-		Contact.belongsTo(Client);
+		Contact.belongsTo(Client, {onDelete: 'CASCADE'});
 		Client.hasMany(Contact);
 
-		Point.belongsTo(Client);
+		Point.belongsTo(Client, {onDelete: 'CASCADE'});
 		Client.hasMany(Point);
 
-		Collect.belongsTo(Point);
+		Collect.belongsTo(Point, {onDelete: 'CASCADE'});
 		Point.hasMany(Collect);
 
 		// Syncronize
