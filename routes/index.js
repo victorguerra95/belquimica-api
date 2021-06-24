@@ -22,7 +22,9 @@ module.exports = function(app) {
 	function routesDefinitions() {
 
 		app.route('/api/private/admin/clients')
-		.get(controllerClient.getClients);
+		.post(controllerClient.createClient)
+		.get(controllerClient.getClients)
+		.put(controllerClient.updateClient);
 
 		/*
 		app.route('/api/changeTextChallenge/:text')

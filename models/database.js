@@ -64,14 +64,11 @@ module.exports = function Database(app) {
 		}, tableDefaultMetadata);
 
 		const Point = sequelize.define('points', {
-			address: Sequelize.TEXT
+			address: Sequelize.TEXT,
+			systems: Sequelize.JSON
 		}, tableDefaultMetadata);
 
-		const System = sequelize.define('systems', {
-			name: Sequelize.STRING
-		}, tableDefaultMetadata);
-
-		const Collect = sequelize.define('systems', {
+		const Collect = sequelize.define('collects', {
 			collect_date: Sequelize.DATE,
 			analysis_date: Sequelize.DATE,
 			collect_data: Sequelize.JSON,
@@ -93,9 +90,6 @@ module.exports = function Database(app) {
 
 		Point.belongsTo(Client);
 		Client.hasMany(Point);
-
-		System.belongsTo(Point);
-		Point.hasMany(System);
 
 		Collect.belongsTo(Point);
 		Point.hasMany(Collect);
@@ -148,7 +142,6 @@ module.exports = function Database(app) {
 			ClientUser,
 			Contact,
 			Point,
-			System,
 			Collect
 		});
 	}
