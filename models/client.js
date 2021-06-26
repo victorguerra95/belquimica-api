@@ -1,5 +1,3 @@
-const { filter } = require('lodash');
-
 module.exports = function(app) {
 	'use strict';
 
@@ -112,7 +110,7 @@ module.exports = function(app) {
                                     ["name", "ASC"]
                                 ],
                                 offset: off,
-                                limit: 30,
+                                //limit: 30,
                             }).then(clients => {
                 
                                 Client.count({
@@ -609,71 +607,54 @@ module.exports = function(app) {
 
                         if(filter.client_id){
 
-                            Client.destroy({
+                            ClientUser.findAll({
                                 where: {
-                                    id: filter.client_id
+                                    client_id: filter.client_id
                                 },
-                                force: true
-                            }).then(removeDataResult => {	
-                                resolve({ code: 200, response: removeDataResult });
-                            });
-                            
-                            /*
-                            admin
-                            .auth()
-                            .deleteUser(clientUserDb.user.firebase_uid)
-                            .then(() => {
+                                include: [
+                                    {
+                                        model: User
+                                    }
+                                ]
+                            }).then(clientUsers => {	
+
+                                var clientUsersFirebaseUids = clientUsers.map(function(c) {
+                                    return c.user.firebase_uid;
+                                });
                                 
-                                User.destroy({
-                                    where: {
-                                        id: clientUserDb.user.id
-                                    },
-                                    force: true
-                                }).then(removeUserData => {	
+                                admin
+                                .auth()
+                                .deleteUsers(clientUsersFirebaseUids)
+                                .then((deleteUsersResult) => {
                                     
-                                    ClientUser.destroy({
+                                    var clientUsersIds = clientUsers.map(function(c) {
+                                        return c.user_id
+                                    });
+
+                                    User.destroy({
                                         where: {
-                                            id: clientUserDb.id
+                                            id: {
+                                                in: clientUsersIds
+                                            }
                                         },
                                         force: true
-                                    }).then(removeClientUserData => {	
+                                    }).then(removeUserDataResult => {	
                                         
-                                        Client.findOne({
+                                        Client.destroy({
                                             where: {
                                                 id: filter.client_id
                                             },
-                                            include: [
-                                                {
-                                                    model: Contact
-                                                },
-                                                {
-                                                    model: Point
-                                                },
-                                                {
-                                                    model: ClientUser,
-                                                    include: [
-                                                        {
-                                                            model: User
-                                                        }
-                                                    ]
-                                                }
-                                            ],
-                                            order: [ 
-                                                [ { model: Contact }, 'id', 'ASC' ],
-                                                [ { model: Point }, 'id', 'ASC' ],
-                                                [ { model: ClientUser }, 'id', 'ASC' ]
-                                            ],
-                                        }).then(client_result => {
-                                            resolve({ code: 200, response: client_result });
+                                            force: true
+                                        }).then(removeDataResult => {	
+                                            resolve({ code: 200, response: removeDataResult });
                                         });
-
+    
                                     });
 
+                                }).catch((error) => {
+                                    resolve({code: 500, message: error.code});
                                 });
                             })
-                            .catch((error) => {
-                                resolve({code: 500, message: error.code});
-                            });*/
 
 
                         }else{
