@@ -3,7 +3,7 @@ module.exports = {
 	user: 'postgres',
 	password : 'E8F!x79$fAtH$T',
 	options: {
-		//host: '159.65.189.104',
+		//host: '143.198.237.70',
 		host: 'localhost',
 		dialect: 'postgres',
 		port: 5432,
