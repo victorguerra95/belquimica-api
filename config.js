@@ -1,7 +1,7 @@
 module.exports = {
 	name: 'camiquibel-oabsdewg-regkj',
 	user: 'postgres',
-	password : 'Ukx131219945395',
+	password : 'E8F!x79$fAtH$T',
 	options: {
 		//host: '159.65.189.104',
 		host: 'localhost',

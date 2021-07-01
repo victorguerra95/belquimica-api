@@ -1,7 +1,7 @@
 'use strict';
 
 const app = require('./app')(),
-	port = 3000;
+	port = 3003;
 
 app.listen(port);
 console.log('Server started at port:', port);

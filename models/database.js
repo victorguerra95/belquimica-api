@@ -64,8 +64,7 @@ module.exports = function Database(app) {
 		}, tableDefaultMetadata);
 
 		const Point = sequelize.define('points', {
-			address: Sequelize.TEXT,
-			systems: Sequelize.JSON
+			name: Sequelize.TEXT
 		}, tableDefaultMetadata);
 
 		const Collect = sequelize.define('collects', {
@@ -91,8 +90,8 @@ module.exports = function Database(app) {
 		Point.belongsTo(Client, {onDelete: 'CASCADE'});
 		Client.hasMany(Point);
 
-		Collect.belongsTo(Point, {onDelete: 'CASCADE'});
-		Point.hasMany(Collect);
+		Collect.belongsTo(Client, {onDelete: 'CASCADE'});
+		Client.hasMany(Collect);
 
 		// Syncronize
 		sequelize.sync().then(function() {

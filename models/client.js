@@ -226,7 +226,7 @@ module.exports = function(app) {
                                     entity_db = Contact;
 
                                 }else if(filter.data == "point"){
-                                    parameters_parser_arr = ["address", "systems"];
+                                    parameters_parser_arr = ["name"];
                                     entity_db = Point;
 
                                 }

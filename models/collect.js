@@ -46,17 +46,20 @@ module.exports = function(app) {
                                 },
                                 include: [
                                     {
-                                        model: Point,
-                                        include: [
-                                            {
-                                                model: Client
-                                            }
-                                        ]
+                                        model: Client
                                     }
                                 ]
                             }).then(collect_data => {
-                
-                                resolve({code: 200, response: collect_data });
+
+                                Point.findAll({
+                                    where: {
+                                        client_id: collect_data.client_id
+                                    }
+                                }).then(points_data => {
+
+                                    resolve({code: 200, response: { collect: collect_data, points: points_data } });
+
+                                });
 
                             });
 
@@ -69,8 +72,8 @@ module.exports = function(app) {
                                 }
                             };
 
-                            if(filter.point_id){
-                                whereStament.point_id = parseInt(filter.point_id);
+                            if(filter.client_id){
+                                whereStament.client_id = parseInt(filter.client_id);
                             }
     
                             var off = 0;
@@ -82,16 +85,8 @@ module.exports = function(app) {
                                 where: whereStament,
                                 include: [
                                     {
-                                        model: Point,
-                                        where: {
-                                            client_id: parseInt(filter.client_id)
-                                        },
-                                        include: [
-                                            {
-                                                model: Client,
-                                                as: "client"
-                                            }
-                                        ]
+                                        model: Client,
+                                        as: "client",
                                     }
                                 ],
                                 order: [
@@ -105,15 +100,7 @@ module.exports = function(app) {
                                     where: whereStament,
                                 }).then(count => {
 
-                                    Point.findAll({
-                                        where: {
-                                            client_id: parseInt(filter.client_id)
-                                        }
-                                    }).then(points => {
-
-                                        resolve({code: 200, response: { collects: collects, count: count, points: points } });
-
-                                    });
+                                    resolve({code: 200, response: { collects: collects, count: count } });
 
                                 });
 
@@ -198,7 +185,7 @@ module.exports = function(app) {
 
                                 Collect.create({
                                     collect_data: collect_origin.collect_data,
-                                    point_id: collect_origin.point_id
+                                    client_id: collect_origin.client_id
                                 }).then(collectCreated => {	
                                     resolve({code: 200, response: collectCreated });
                                 })
@@ -207,28 +194,24 @@ module.exports = function(app) {
 
                         }else{
 
-                            let new_collect = {};
-                            let parameters_parser_arr = ["collect_date", "analysis_date", "point_id"];
-                            parameters_parser_arr.forEach(param => {
-                                if(data[param] != null){
-                                    new_collect[param] = data[param];
-                                }
-                            });
+                            let new_collect = {
+                                client_id: filter.client_id
+                            };
 
-                            Point.findOne({
+                            Point.findAll({
                                 where: {
-                                    id: new_collect.point_id
+                                    client_id: new_collect.client_id
                                 }
-                            }).then(pointData => {	
+                            }).then(pointsData => {	
 
                                 new_collect.collect_data = {
-                                    point_data: pointData,
                                     systems: []
                                 };
 
-                                pointData.systems.forEach(s => {
+                                pointsData.forEach(s => {
                                     new_collect.collect_data.systems.push({
-                                        name: s,
+                                        id: s.id,
+                                        name: s.name,
                                         inputs: [],
                                         input_technical_advice: null,
                                         input_recommendations: null,
