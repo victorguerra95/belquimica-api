@@ -54,6 +54,34 @@ module.exports = function Database(app) {
 			address: Sequelize.TEXT
 		}, tableDefaultMetadata);
 
+		const System = sequelize.define('systems', {
+			name: Sequelize.STRING,
+			name_term: Sequelize.STRING
+		}, tableDefaultMetadata);
+
+		const ClientSystem = sequelize.define('client_systems', {
+			id: {
+				type: Sequelize.INTEGER,
+				primaryKey: true,
+				autoIncrement: true,
+				allowNull: false
+			},
+			client_id: {
+				type: Sequelize.INTEGER,
+				references: {
+					model: Client,
+					key: 'id'
+				}
+			},
+			system_id: {
+				type: Sequelize.INTEGER,
+				references: {
+					model: System,
+					key: 'id'
+				}
+			}
+		});
+
 		const ClientUser = sequelize.define('client_users', {
 		}, tableDefaultMetadata);
 
@@ -61,10 +89,6 @@ module.exports = function Database(app) {
 			name: Sequelize.STRING,
 			email: Sequelize.STRING,
 			sector: Sequelize.STRING
-		}, tableDefaultMetadata);
-
-		const Point = sequelize.define('points', {
-			name: Sequelize.TEXT
 		}, tableDefaultMetadata);
 
 		const Collect = sequelize.define('collects', {
@@ -77,21 +101,150 @@ module.exports = function Database(app) {
 			},
 		}, tableDefaultMetadata);
 
+		const CollectSystem = sequelize.define('collect_systems', {
+			id: {
+				type: Sequelize.INTEGER,
+				primaryKey: true,
+				autoIncrement: true,
+				allowNull: false
+			},
+			collect_id: {
+				type: Sequelize.INTEGER,
+				references: {
+					model: Collect,
+					key: 'id'
+				}
+			},
+			system_id: {
+				type: Sequelize.INTEGER,
+				references: {
+					model: System,
+					key: 'id'
+				}
+			},
+			input_comments: Sequelize.JSON
+		});
+
+		const Parameter = sequelize.define('parameters', {
+			name: Sequelize.STRING,
+			name_term: Sequelize.STRING
+		}, tableDefaultMetadata);
+
+		const CollectSystemParameter = sequelize.define('collect_system_parameters', {
+			id: {
+				type: Sequelize.INTEGER,
+				primaryKey: true,
+				autoIncrement: true,
+				allowNull: false
+			},
+			collect_system_id: {
+				type: Sequelize.INTEGER,
+				references: {
+					model: CollectSystem,
+					key: 'id'
+				}
+			},
+			parameter_id: {
+				type: Sequelize.INTEGER,
+				references: {
+					model: Parameter,
+					key: 'id'
+				}
+			},
+			unit: Sequelize.STRING,
+			value: Sequelize.STRING,
+			value_graphic: Sequelize.TEXT,
+			default_value_min: Sequelize.STRING,
+			default_value_max: Sequelize.STRING,
+			factor_value_graphic: Sequelize.STRING
+		});
+
+		// Collect, System
+
+		Collect.belongsToMany(System, {
+			through: CollectSystem,
+			as: 'systems',
+			foreignKey: 'collect_id',
+			otherKey: 'system_id'
+		});
+
+		System.belongsToMany(Collect, {
+			through: CollectSystem,
+			as: 'collects',
+			foreignKey: 'system_id',
+			otherKey: 'collect_id'
+		});
+
+		Collect.hasMany(CollectSystem, {foreignKey: 'collect_id'});
+		CollectSystem.belongsTo(Collect, {foreignKey: 'collect_id', onDelete: 'CASCADE'});
+
+		System.hasMany(CollectSystem, {foreignKey: 'system_id' });
+		CollectSystem.belongsTo(System, {foreignKey: 'system_id'});
+
+		// CollectSystem, Parameter
+
+		CollectSystem.belongsToMany(Parameter, {
+			through: CollectSystemParameter,
+			as: 'parameters',
+			foreignKey: 'collect_system_id',
+			otherKey: 'parameter_id'
+		});
+
+		Parameter.belongsToMany(CollectSystem, {
+			through: CollectSystemParameter,
+			as: 'collect_systems',
+			foreignKey: 'parameter_id',
+			otherKey: 'collect_system_id'
+		});
+
+		CollectSystem.hasMany(CollectSystemParameter, {foreignKey: 'collect_system_id'});
+		CollectSystemParameter.belongsTo(CollectSystem, {foreignKey: 'collect_system_id', onDelete: 'CASCADE'});
+
+		Parameter.hasMany(CollectSystemParameter, {foreignKey: 'parameter_id' });
+		CollectSystemParameter.belongsTo(Parameter, {foreignKey: 'parameter_id'});
+
+		// User, UserType
+
 		User.belongsTo(UserType);
 		UserType.hasMany(User);
+
+		// ClientUser, User
 
 		ClientUser.belongsTo(User);
 		ClientUser.belongsTo(Client, {onDelete: 'CASCADE'});
 		Client.hasMany(ClientUser);
 
+		// Contact, Client
+
 		Contact.belongsTo(Client, {onDelete: 'CASCADE'});
 		Client.hasMany(Contact);
 
-		Point.belongsTo(Client, {onDelete: 'CASCADE'});
-		Client.hasMany(Point);
+		// Collect, Client
 
 		Collect.belongsTo(Client, {onDelete: 'CASCADE'});
 		Client.hasMany(Collect);
+
+		// Client, System
+
+		Client.belongsToMany(System, {
+			through: ClientSystem,
+			as: 'systems',
+			foreignKey: 'client_id',
+			otherKey: 'system_id'
+		});
+
+		System.belongsToMany(Client, {
+			through: ClientSystem,
+			as: 'clients',
+			foreignKey: 'system_id',
+			otherKey: 'client_id'
+		});
+
+		Client.hasMany(ClientSystem, {foreignKey: 'client_id'});
+		ClientSystem.belongsTo(Client, {foreignKey: 'client_id', onDelete: 'CASCADE'});
+
+		System.hasMany(ClientSystem, {foreignKey: 'system_id' });
+		ClientSystem.belongsTo(System, {foreignKey: 'system_id'});
 
 		// Syncronize
 		sequelize.sync().then(function() {
@@ -140,8 +293,12 @@ module.exports = function Database(app) {
 			Client,
 			ClientUser,
 			Contact,
-			Point,
-			Collect
+			System,
+			Collect,
+			ClientSystem,
+			CollectSystem,
+			Parameter,
+			CollectSystemParameter
 		});
 	}
 	

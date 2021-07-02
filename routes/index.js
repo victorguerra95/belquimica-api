@@ -36,6 +36,15 @@ module.exports = function(app) {
 		.get(controllerCollect.getCollects)
 		.delete(controllerCollect.deleteCollect);
 
+		app.route('/api/private/admin/collects/updateParameters')
+		.post(controllerCollect.updateParameters);
+
+		app.route('/api/private/admin/collects/updateSystems')
+		.post(controllerCollect.updateSystems);
+
+		app.route('/api/private/admin/collects/updateCollectSystem')
+		.post(controllerCollect.updateCollectSystem);
+
 		app.route('/api/private/admin/points')
 		.get(controllerCollect.getPoints);
 

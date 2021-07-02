@@ -4,7 +4,8 @@ module.exports = function(app) {
     const User = app.get('models').User;
     const Client = app.get('models').Client;
     const Contact = app.get('models').Contact;
-    const Point = app.get('models').Point;
+    const System = app.get('models').System;
+    const ClientSystem = app.get('models').ClientSystem;
     const ClientUser = app.get('models').ClientUser;
     const Collect = app.get('models').Collect;
 
@@ -49,7 +50,12 @@ module.exports = function(app) {
                                         model: Contact
                                     },
                                     {
-                                        model: Point
+                                        model: ClientSystem,
+                                        include: [
+                                            {
+                                                model: System
+                                            }
+                                        ]
                                     },
                                     {
                                         model: ClientUser,
@@ -62,7 +68,7 @@ module.exports = function(app) {
                                 ],
                                 order: [ 
                                     [ { model: Contact }, 'id', 'ASC' ],
-                                    [ { model: Point }, 'id', 'ASC' ],
+                                    [ { model: ClientSystem }, 'id', 'ASC' ],
                                     [ { model: ClientUser }, 'id', 'ASC' ]
                                 ],
                             }).then(client_data => {
@@ -103,7 +109,12 @@ module.exports = function(app) {
                                 where: whereStament,
                                 include: [
                                     {
-                                        model: Point
+                                        model: ClientSystem,
+                                        include: [
+                                            {
+                                                model: System
+                                            }
+                                        ]
                                     }
                                 ],
                                 order: [
@@ -215,21 +226,13 @@ module.exports = function(app) {
                                     resolve({code: 200, response: true});
                                 });
 
-                            }else if(filter.data == "contact" || filter.data == "point"){
+                            }else if(filter.data == "contact"){
 
                                 let contact_data = { client_id: filter.client_id };
                                 let parameters_parser_arr = null;
-                                let entity_db = null;
+                                let entity_db = Contact;
 
-                                if(filter.data == "contact"){
-                                    parameters_parser_arr = ["name", "email", "sector"];
-                                    entity_db = Contact;
-
-                                }else if(filter.data == "point"){
-                                    parameters_parser_arr = ["name"];
-                                    entity_db = Point;
-
-                                }
+                                parameters_parser_arr = ["name", "email", "sector"];
 
                                 parameters_parser_arr.forEach(param => {
                                     if(data[param] != null){
@@ -248,7 +251,12 @@ module.exports = function(app) {
                                                     model: Contact
                                                 },
                                                 {
-                                                    model: Point
+                                                    model: ClientSystem,
+                                                    include: [
+                                                        {
+                                                            model: System
+                                                        }
+                                                    ]
                                                 },
                                                 {
                                                     model: ClientUser,
@@ -261,7 +269,7 @@ module.exports = function(app) {
                                             ],
                                             order: [ 
                                                 [ { model: Contact }, 'id', 'ASC' ],
-                                                [ { model: Point }, 'id', 'ASC' ],
+                                                [ { model: ClientSystem }, 'id', 'ASC' ],
                                                 [ { model: ClientUser }, 'id', 'ASC' ]
                                             ],
                                         }).then(client_result => {
@@ -279,7 +287,12 @@ module.exports = function(app) {
                                                     model: Contact
                                                 },
                                                 {
-                                                    model: Point
+                                                    model: ClientSystem,
+                                                    include: [
+                                                        {
+                                                            model: System
+                                                        }
+                                                    ]
                                                 },
                                                 {
                                                     model: ClientUser,
@@ -292,7 +305,7 @@ module.exports = function(app) {
                                             ],
                                             order: [ 
                                                 [ { model: Contact }, 'id', 'ASC' ],
-                                                [ { model: Point }, 'id', 'ASC' ],
+                                                [ { model: ClientSystem }, 'id', 'ASC' ],
                                                 [ { model: ClientUser }, 'id', 'ASC' ]
                                             ],
                                         }).then(client_result => {
@@ -315,7 +328,12 @@ module.exports = function(app) {
                                                     model: Contact
                                                 },
                                                 {
-                                                    model: Point
+                                                    model: ClientSystem,
+                                                    include: [
+                                                        {
+                                                            model: System
+                                                        }
+                                                    ]
                                                 },
                                                 {
                                                     model: ClientUser,
@@ -328,7 +346,152 @@ module.exports = function(app) {
                                             ],
                                             order: [ 
                                                 [ { model: Contact }, 'id', 'ASC' ],
-                                                [ { model: Point }, 'id', 'ASC' ],
+                                                [ { model: ClientSystem }, 'id', 'ASC' ],
+                                                [ { model: ClientUser }, 'id', 'ASC' ]
+                                            ],
+                                        }).then(client_result => {
+                                            resolve({ code: 200, response: client_result });
+                                        });
+                                    });
+                                }
+
+                            }else if(filter.data == "system"){
+
+                                if(filter.action == "create" || filter.action == "update"){
+
+                                    let name_term = formatTerm(data.system.name);
+
+                                    System.findOrCreate({
+                                        where: {
+                                            name_term: name_term
+                                        },
+                                        defaults: {
+                                            name: data.system.name,
+                                            name_term: name_term
+                                        }
+                                    }).then(systemFindData => {	
+                                        
+                                        let system_data = JSON.parse(JSON.stringify(systemFindData[0]));
+
+                                        if(filter.action == "create"){
+
+                                            ClientSystem.create({
+                                                client_id: parseInt(filter.client_id),
+                                                system_id: system_data.id
+                                            }).then(client_system_data => {
+
+                                                Client.findOne({
+                                                    where: {
+                                                        id: filter.client_id
+                                                    },
+                                                    include: [
+                                                        {
+                                                            model: Contact
+                                                        },
+                                                        {
+                                                            model: ClientSystem,
+                                                            include: [
+                                                                {
+                                                                    model: System
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            model: ClientUser,
+                                                            include: [
+                                                                {
+                                                                    model: User
+                                                                }
+                                                            ]
+                                                        }
+                                                    ],
+                                                    order: [ 
+                                                        [ { model: Contact }, 'id', 'ASC' ],
+                                                        [ { model: ClientSystem }, 'id', 'ASC' ],
+                                                        [ { model: ClientUser }, 'id', 'ASC' ]
+                                                    ],
+                                                }).then(client_result => {
+                                                    resolve({ code: 200, response: client_result });
+                                                });
+
+                                            });
+
+                                        }else if(filter.action == "update"){
+
+                                            ClientSystem.update({ system_id: system_data.id }, {where:  {id: data.id} }).then(itemDataUpdate => {	
+                                                Client.findOne({
+                                                    where: {
+                                                        id: filter.client_id
+                                                    },
+                                                    include: [
+                                                        {
+                                                            model: Contact
+                                                        },
+                                                        {
+                                                            model: ClientSystem,
+                                                            include: [
+                                                                {
+                                                                    model: System
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            model: ClientUser,
+                                                            include: [
+                                                                {
+                                                                    model: User
+                                                                }
+                                                            ]
+                                                        }
+                                                    ],
+                                                    order: [ 
+                                                        [ { model: Contact }, 'id', 'ASC' ],
+                                                        [ { model: ClientSystem }, 'id', 'ASC' ],
+                                                        [ { model: ClientUser }, 'id', 'ASC' ]
+                                                    ],
+                                                }).then(client_result => {
+                                                    resolve({ code: 200, response: client_result });
+                                                });
+                                            });
+
+                                        }
+
+                                    });
+                                }else if(filter.action == "delete"){
+                                    ClientSystem.destroy({
+                                        force: true,
+                                        where: {
+                                            id: data.id
+                                        }
+                                    }).then(destroyData => {
+                                        Client.findOne({
+                                            where: {
+                                                id: filter.client_id
+                                            },
+                                            include: [
+                                                {
+                                                    model: Contact
+                                                },
+                                                {
+                                                    model: ClientSystem,
+                                                    include: [
+                                                        {
+                                                            model: System
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    model: ClientUser,
+                                                    include: [
+                                                        {
+                                                            model: User
+                                                        }
+                                                    ]
+                                                }
+                                            ],
+                                            order: [ 
+                                                [ { model: Contact }, 'id', 'ASC' ],
+                                                [ { model: ClientSystem }, 'id', 'ASC' ],
                                                 [ { model: ClientUser }, 'id', 'ASC' ]
                                             ],
                                         }).then(client_result => {
@@ -372,7 +535,12 @@ module.exports = function(app) {
                                                             model: Contact
                                                         },
                                                         {
-                                                            model: Point
+                                                            model: ClientSystem,
+                                                            include: [
+                                                                {
+                                                                    model: System
+                                                                }
+                                                            ]
                                                         },
                                                         {
                                                             model: ClientUser,
@@ -385,7 +553,7 @@ module.exports = function(app) {
                                                     ],
                                                     order: [ 
                                                         [ { model: Contact }, 'id', 'ASC' ],
-                                                        [ { model: Point }, 'id', 'ASC' ],
+                                                        [ { model: ClientSystem }, 'id', 'ASC' ],
                                                         [ { model: ClientUser }, 'id', 'ASC' ]
                                                     ],
                                                 }).then(client_result => {
@@ -441,7 +609,12 @@ module.exports = function(app) {
                                                                 model: Contact
                                                             },
                                                             {
-                                                                model: Point
+                                                                model: ClientSystem,
+                                                                include: [
+                                                                    {
+                                                                        model: System
+                                                                    }
+                                                                ]
                                                             },
                                                             {
                                                                 model: ClientUser,
@@ -454,7 +627,7 @@ module.exports = function(app) {
                                                         ],
                                                         order: [ 
                                                             [ { model: Contact }, 'id', 'ASC' ],
-                                                            [ { model: Point }, 'id', 'ASC' ],
+                                                            [ { model: ClientSystem }, 'id', 'ASC' ],
                                                             [ { model: ClientUser }, 'id', 'ASC' ]
                                                         ],
                                                     }).then(client_result => {
@@ -472,7 +645,12 @@ module.exports = function(app) {
                                                             model: Contact
                                                         },
                                                         {
-                                                            model: Point
+                                                            model: ClientSystem,
+                                                            include: [
+                                                                {
+                                                                    model: System
+                                                                }
+                                                            ]
                                                         },
                                                         {
                                                             model: ClientUser,
@@ -485,7 +663,7 @@ module.exports = function(app) {
                                                     ],
                                                     order: [ 
                                                         [ { model: Contact }, 'id', 'ASC' ],
-                                                        [ { model: Point }, 'id', 'ASC' ],
+                                                        [ { model: ClientSystem }, 'id', 'ASC' ],
                                                         [ { model: ClientUser }, 'id', 'ASC' ]
                                                     ],
                                                 }).then(client_result => {
@@ -540,7 +718,12 @@ module.exports = function(app) {
                                                                 model: Contact
                                                             },
                                                             {
-                                                                model: Point
+                                                                model: ClientSystem,
+                                                                include: [
+                                                                    {
+                                                                        model: System
+                                                                    }
+                                                                ]
                                                             },
                                                             {
                                                                 model: ClientUser,
@@ -553,7 +736,7 @@ module.exports = function(app) {
                                                         ],
                                                         order: [ 
                                                             [ { model: Contact }, 'id', 'ASC' ],
-                                                            [ { model: Point }, 'id', 'ASC' ],
+                                                            [ { model: ClientSystem }, 'id', 'ASC' ],
                                                             [ { model: ClientUser }, 'id', 'ASC' ]
                                                         ],
                                                     }).then(client_result => {

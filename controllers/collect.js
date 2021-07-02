@@ -79,11 +79,59 @@ module.exports = function(app) {
 		
     }
 
+    function updateParameters(req, res, next) {
+        
+        const model = new Model(app);
+		model.updateParameters(req.firebase_uid, req.query, req.body).then(data => {
+
+            if(data.code == 200){
+                return res.status(data.code).json(utils.responseSuccess(data.response));
+            }else{
+                return res.status(data.code).json(utils.responseError(data));
+            }
+
+        }).catch(next);
+		
+    }
+
+    function updateSystems(req, res, next) {
+        
+        const model = new Model(app);
+		model.updateSystems(req.firebase_uid, req.query, req.body).then(data => {
+
+            if(data.code == 200){
+                return res.status(data.code).json(utils.responseSuccess(data.response));
+            }else{
+                return res.status(data.code).json(utils.responseError(data));
+            }
+
+        }).catch(next);
+		
+    }
+
+    function updateCollectSystem(req, res, next) {
+        
+        const model = new Model(app);
+		model.updateSystems(req.firebase_uid, req.query, req.body).then(data => {
+
+            if(data.code == 200){
+                return res.status(data.code).json(utils.responseSuccess(data.response));
+            }else{
+                return res.status(data.code).json(utils.responseError(data));
+            }
+
+        }).catch(next);
+		
+    }
+
 	return {
         getCollects,
         getPoints,
         createCollect,
         updateCollect,
-        deleteCollect
+        deleteCollect,
+        updateParameters,
+        updateSystems,
+        updateCollectSystem
 	};
 };
