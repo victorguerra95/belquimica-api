@@ -112,7 +112,7 @@ module.exports = function(app) {
     function updateCollectSystem(req, res, next) {
         
         const model = new Model(app);
-		model.updateSystems(req.firebase_uid, req.query, req.body).then(data => {
+		model.updateCollectSystem(req.firebase_uid, req.query, req.body).then(data => {
 
             if(data.code == 200){
                 return res.status(data.code).json(utils.responseSuccess(data.response));

@@ -232,9 +232,12 @@ module.exports = function(app) {
 
                         if(filter.duplicate_id){
 
+                            let collect_origin_id = parseInt(filter.duplicate_id);
+                            let client_destiny_id = parseInt(filter.client_id);
+
                             Collect.findOne({
                                 where: {
-                                    id: filter.duplicate_id
+                                    id: collect_origin_id
                                 },
                                 include: [
                                     {
@@ -260,11 +263,53 @@ module.exports = function(app) {
                             }).then(collect_origin => {	
 
                                 Collect.create({
-                                    collect_data: collect_origin.collect_data,
-                                    client_id: collect_origin.client_id
-                                }).then(collectCreated => {	
-                                    resolve({code: 200, response: collectCreated });
-                                })
+                                }).then(new_collect_created => {	
+                                    
+                                    //resolve({code: 200, response: collectCreated });
+
+                                    let flow = async () => {
+                                        
+                                        try {
+                                            var error = false;
+                                            for (let index = 0; index < collect_origin.collect_systems.length; index++) {
+                                                var collect_system_origin = collect_origin.collect_systems[index];
+                                                var result = await duplivateCollectSystemParameters(new_collect_created.id, collect_system_origin);
+                                                if(result.status == false){
+                                                    error = true;
+                                                    break;
+                                                }
+                                            }
+                                            
+                                            if(!error){
+
+                                                Collect.update({ client_id: client_destiny_id }, {
+                                                    where: {
+                                                        id: new_collect_created.id
+                                                    }
+                                                }).then(update_collect => {
+                                                    resolve({code: 200, response: new_collect_created });
+                                                });
+                                                
+                                            }else{
+                                                resolve({code: 500, message: "unexpected_error"});
+                                            }
+
+                                            return error;
+
+                                        } catch (error) {
+
+                                            resolve({code: 500, message: "unexpected_error"});
+                                            return false;
+                                        }               
+                                    }
+                                    
+                                    flow().then((value) => {
+                                        //console.log("duplicate_collect_function_result_error: " + value);
+                                    });	
+
+                                });
+
+                                
 
                             });
 
@@ -350,6 +395,47 @@ module.exports = function(app) {
 
         });
     }
+
+    function duplivateCollectSystemParameters(new_collect_id, collect_system_origin){
+        return new Promise(function (resolve, reject) {
+
+            try {
+
+
+                CollectSystem.create({
+                    collect_id: new_collect_id,
+                    system_id: collect_system_origin.system_id,
+                    input_comments: collect_system_origin.input_comments
+                }).then(new_collect_system_created => {	
+
+                    var new_parameters = collect_system_origin.collect_system_parameters.map(function(p) {
+                        return {
+                            collect_system_id: new_collect_system_created.id,
+                            parameter_id: p.parameter_id,
+                            unit: p.unit,
+                            value: p.value,
+                            value_graphic: p.value_graphic,
+                            default_value_min: p.default_value_min,
+                            default_value_max: p.default_value_max,
+                            factor_value_graphic: p.factor_value_graphic,
+                        };
+                    });
+
+                    CollectSystemParameter.bulkCreate(new_parameters, {
+					    fields: ['collect_system_id', 'parameter_id','unit', 'value', 'value_graphic', 'default_value_min', 'default_value_max', 'factor_value_graphic']
+				    }).then(new_parameters_created => {
+                        resolve({status: true});
+                    });
+
+                });
+
+                
+            } catch (error) {
+                resolve({status: false, error: error});
+            }
+        });
+    }
+
 
     function updateCollect(firebase_uid, data) {
 
@@ -676,6 +762,71 @@ module.exports = function(app) {
         });
     }
 
+    function updateCollectSystem(firebase_uid, filter, data) {
+
+        return new Promise((resolve, reject) => {
+
+            try {
+
+                User.findOne({
+                    where: {
+                        firebase_uid: firebase_uid
+                    }
+                }).then(userData => {	
+
+                    if(userData != null){
+
+                        let collect_system_id = parseInt(filter.collect_system_id);
+
+                        let data_to_update = {};
+
+                        var parameters_parser_arr = ["input_comments"];
+                        parameters_parser_arr.forEach(param => {
+                            if(data[param] != null){
+                                data_to_update[param] = data[param];
+                            }
+                        });
+
+                        CollectSystem.update(data_to_update, {where:  {id: collect_system_id} }).then(itemDataUpdate => {	
+
+                            CollectSystem.findOne({
+                                where: {
+                                    id: collect_system_id
+                                },
+                                include: [
+                                    {
+                                        model: System
+                                    },
+                                    {
+                                        model: CollectSystemParameter,
+                                        include: [
+                                            {
+                                                model: Parameter
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }).then(full_collect_system_data => {
+
+                                resolve({ code: 200, response: full_collect_system_data });
+
+                            });
+
+                        });
+
+                    }else{
+                        resolve({code: 500, message: "unexpected_error"});
+                    }
+
+                });
+                
+            } catch (error) {
+                resolve({code: 500, message: "unexpected_error"});
+            }
+
+        });
+    }
+
     function formatWord (text){       
 	    text = text.toLowerCase();                     
 	    text = text.replace(new RegExp('[ÁÀÂÃ]','gi'), 'a');
@@ -724,6 +875,7 @@ module.exports = function(app) {
         updateCollect,
         deleteCollect,
         updateParameters,
-        updateSystems
+        updateSystems,
+        updateCollectSystem
 	};
 };
