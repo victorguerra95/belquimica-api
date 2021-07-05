@@ -176,6 +176,109 @@ module.exports = function(app) {
         });
     }
 
+    function getCollectReport(firebase_uid, filter) {
+
+        return new Promise((resolve, reject) => {
+
+            try {
+
+                User.findOne({
+                    where: {
+                        firebase_uid: firebase_uid
+                    }
+                }).then(userData => {	
+
+                    if(userData != null){
+                        
+                        if(filter.collect_id){
+
+                            Collect.findOne({
+                                where: {
+                                    id: filter.collect_id
+                                },
+                                include: [
+                                    {
+                                        model: Client
+                                    },
+                                    {
+                                        model: CollectSystem,
+                                        include: [
+                                            {
+                                                model: System
+                                            },
+                                            {
+                                                model: CollectSystemParameter,
+                                                include: [
+                                                    {
+                                                        model: Parameter
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }).then(collect_data => {
+
+                                let report_graph = collect_data.collect_systems[0].collect_system_parameters.map(function(csp) {
+                                    return csp.parameter.id;
+                                });
+                                //console.log(JSON.stringify(report_graph));
+
+                                Parameter.findAll({
+                                    where: {
+                                        id: {
+                                            in: report_graph
+                                        }
+                                    },
+                                    include: [
+                                        {
+                                            model: CollectSystemParameter,
+                                            include : [
+                                                {
+                                                    model: CollectSystem,
+                                                    where: {
+                                                        system_id: collect_data.collect_systems[0].system_id
+                                                    },
+                                                    include : [
+                                                        {
+                                                            model: Collect,
+                                                            where: {
+                                                                client_id: collect_data.client_id
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            ],
+                                            //limit: 2
+                                        }
+                                    ],
+                                    order: [
+                                        [ 'id', 'DESC' ]
+                                    ]
+                                }).then(data_report => {
+                                    
+                                    resolve({code: 200, response: { collect: collect_data, data_report: data_report } });
+
+                                });
+                            });
+
+                        }else{
+                            resolve({code: 500, message: "unexpected_error"});    
+                        }
+
+                    }else{
+                        resolve({code: 500, message: "unexpected_error"});
+                    }
+
+                });
+                
+            } catch (error) {
+                resolve({code: 500, message: "unexpected_error"});
+            }
+
+        });
+    }
+
     function getPoints(firebase_uid, filter) {
 
         return new Promise((resolve, reject) => {
@@ -435,7 +538,6 @@ module.exports = function(app) {
             }
         });
     }
-
 
     function updateCollect(firebase_uid, data) {
 
@@ -876,6 +978,7 @@ module.exports = function(app) {
         deleteCollect,
         updateParameters,
         updateSystems,
-        updateCollectSystem
+        updateCollectSystem,
+        getCollectReport
 	};
 };

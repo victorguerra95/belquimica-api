@@ -19,6 +19,21 @@ module.exports = function(app) {
 		
     }
 
+    function getCollectReport(req, res, next) {
+        
+        const model = new Model(app);
+		model.getCollectReport(req.firebase_uid, req.query).then(data => {
+
+            if(data.code == 200){
+                return res.status(data.code).json(utils.responseSuccess(data.response));
+            }else{
+                return res.status(data.code).json(utils.responseError(data));
+            }
+
+        }).catch(next);
+		
+    }
+
     function getPoints(req, res, next) {
         
         const model = new Model(app);
@@ -132,6 +147,7 @@ module.exports = function(app) {
         deleteCollect,
         updateParameters,
         updateSystems,
-        updateCollectSystem
+        updateCollectSystem,
+        getCollectReport
 	};
 };

@@ -1,3 +1,5 @@
+const client = require('./client');
+
 module.exports = function Database(app) {
 	'use strict';
 
@@ -248,10 +250,116 @@ module.exports = function Database(app) {
 
 		// Syncronize
 		sequelize.sync().then(function() {
-			seed(UserType, User);
+			seed(User, UserType, Client, ClientUser, Contact, System, Collect, ClientSystem, CollectSystem, Parameter, CollectSystemParameter);
+			/*
+			CollectSystem.findAll({
+				where: {
+					id: {
+						in: [123, 124]
+					}
+				},
+				include: [
+					{
+						model: CollectSystemParameter,
+						include : [
+							{
+								model: Parameter,
+								include: [
+									{
+										separate: true,
+										model: CollectSystemParameter,
+										where: {
+											collect_system_id: {$col: 'collect_system.id'}
+										},
+										include : [
+											{
+												model: CollectSystem,
+												where: {
+													//system_id: models.sequelize.literal('collect_system.system_id')
+													//system_id: 2
+													//system_id: {$col: 'collect_system.system_id'}
+												},
+												include : [
+													{
+														model: Collect,
+														where: {
+															//client_id: 4
+														}
+													}
+												]
+											}
+										],
+										//limit: 2
+									}
+								]
+							}
+						],
+						//limit: 2
+					}
+				],
+				order: [
+					[ 'id', 'DESC' ]
+				]
+			}).then(data => {
+				//console.log(JSON.stringify(data));
+
+				const fs = require('fs');
+				fs.writeFile('result_report.json', JSON.stringify(data), error => {
+					if (error) {
+						console.error(error);
+						return;
+					}
+					console.log("FOI");
+				});
+
+			});*/
+			/*
+			Parameter.findAll({
+				where: {
+					id: {
+						in: [19,18,1,11,10,13,12,14,15,17]
+					}
+				},
+				include: [
+					{
+						model: CollectSystemParameter,
+						include : [
+							{
+								model: CollectSystem,
+								where: {
+									system_id: 2
+								},
+								include : [
+									{
+										model: Collect,
+										where: {
+											client_id: 4
+										}
+									}
+								]
+							}
+						],
+						//limit: 2
+					}
+				],
+				order: [
+					[ 'id', 'DESC' ]
+				]
+			}).then(data => {
+				//console.log(JSON.stringify(data));
+				const fs = require('fs');
+				fs.writeFile('result_report.json', JSON.stringify(data), error => {
+					if (error) {
+						console.error(error);
+						return;
+					}
+					console.log("FOI");
+				});
+			});*/
+
 		});
 
-		function seed(UserType, User){
+		function seed(User, UserType, Client, ClientUser, Contact, System, Collect, ClientSystem, CollectSystem, Parameter, CollectSystemParameter){
 			UserType.count().then(c => {
 				if(c == 0){
 					var types = require('../config/seed_user_type.json');
@@ -285,6 +393,208 @@ module.exports = function Database(app) {
 					});
 				}
 			});
+			//mockCollects(Client);
+		}
+
+		function mockCollects(){
+			Client.findAll({
+				limit: 1,
+				order: [
+					[ 'id', 'DESC' ]
+				]
+			}).then(clients => {
+				
+				if(clients.length > 0){
+					
+					let client_destiny = clients[0];
+
+					let mock_data = require('../example_data_collect.json');
+					//console.log(JSON.stringify(mock_data));
+
+					Collect.create({
+					}).then(new_collect_created => {	
+
+						let flow = async () => {
+											
+							try {
+								var error = false;
+								//for (let index = 0; index < mock_data.systems.length; index++) {
+								for (let index = 0; index < 2; index++) {
+									var mock_system = mock_data.systems[index];
+									var result = await duplicateCollectSystem(new_collect_created.id, mock_system);
+									if(result.status == false){
+										error = true;
+										break;
+									}else{
+										let new_parameters = [];
+										var error_dup_parameter = false;
+										for (let index_dup_parameter = 0; index_dup_parameter < mock_system.inputs.length; index_dup_parameter++) {
+											let mock_parameter = mock_system.inputs[index_dup_parameter];
+											var result_dup_parameter = await duplicateCollectSystemParameters(new_collect_created.id, mock_system, result.new_collect_system_created, mock_parameter);
+											if(result_dup_parameter.status == false){
+												error_dup_parameter = true;
+												break;
+											}else{
+												new_parameters.push(result_dup_parameter.new_parameter);
+											}
+										}
+										if(error_dup_parameter == true){
+											error = true;
+											break;
+										}else{
+											console.log(JSON.stringify(new_parameters));
+											CollectSystemParameter.bulkCreate(new_parameters, {
+												fields: ['collect_system_id', 'parameter_id','unit', 'value', 'value_graphic', 'default_value_min', 'default_value_max']
+											}).then(new_parameters_created => {
+												console.log("new_parameters_created: " + new_parameters_created);
+											}).catch(function(err) {
+												// print the error details
+												console.log("bulkCreate: " + err);
+											});
+										}
+									}
+								}
+								
+								if(!error){
+
+									Collect.update({ client_id: client_destiny.id }, {
+										where: {
+											id: new_collect_created.id
+										}
+									}).then(update_collect => {
+										//resolve({code: 200, response: new_collect_created });
+									});
+									
+								}else{
+									//resolve({code: 500, message: "unexpected_error"});
+								}
+
+								return error;
+
+							} catch (error) {
+
+								//resolve({code: 500, message: "unexpected_error"});
+								return false;
+							}               
+						}
+						
+						flow().then((value) => {
+							//console.log("duplicate_collect_function_result_error: " + value);
+						});	
+
+					});	
+
+
+				}
+
+			});
+		}
+
+		function duplicateCollectSystem(new_collect_id, mock_system){
+			return new Promise(function (resolve, reject) {
+	
+				try {
+
+					System.findOrCreate({
+						where: {
+							name_term: formatTerm(mock_system.name)
+						},
+						defaults: {
+							name: mock_system.name,
+							name_term: formatTerm(mock_system.name)
+						}
+					}).then(system_find_data => {	
+
+						let system_found = system_find_data[0];
+
+						CollectSystem.create({
+							collect_id: new_collect_id,
+							system_id: system_found.id,
+							input_comments: {
+								input_technical_advice: mock_system.input_technical_advice,
+								input_recommendations: mock_system.input_recommendations,
+								input_dosages: mock_system.input_dosages
+							}
+						}).then(new_collect_system_created => {	
+
+							resolve({status: true, new_collect_system_created: new_collect_system_created });
+
+						});
+
+					});
+	
+					
+				} catch (error) {
+					resolve({status: false, error: error});
+				}
+			});
+		}
+
+		function duplicateCollectSystemParameters(new_collect_id, mock_system, new_collect_system_created, mock_parameter){
+			return new Promise(function (resolve, reject) {
+	
+				try {
+
+					Parameter.findOrCreate({
+						where: {
+							name_term: formatTerm(mock_parameter.parameter)
+						},
+						defaults: {
+							name: mock_parameter.parameter,
+							name_term: formatTerm(mock_parameter.parameter)
+						}
+					}).then(paramter_find_data => {	
+
+						let parameter_found = paramter_find_data[0];
+
+						let new_parameter = {
+							collect_system_id: new_collect_system_created.id,
+							parameter_id: parameter_found.id,
+							unit: mock_parameter.unit,	
+							default_value_min: mock_parameter.default_value_min,
+							default_value_max: mock_parameter.default_value_max
+						};
+
+						//format values
+						let value = parseFloat(mock_parameter.value);
+						
+						if(value == 0){
+							let random_int_variant = Math.floor(Math.random() * (10 - 2) ) + 2;
+							value = random_int_variant;
+						}else{
+							let random_percent_variant = Math.floor(Math.random() * (35 - 5) ) + 5;
+							if(random_percent_variant % 2 == 0){
+								//++
+								value = value + ((value * random_percent_variant) / 100);
+							}else{
+								//--
+								value = value - ((value * random_percent_variant) / 100);
+							}
+						}
+						
+						new_parameter.value = ("" + value.toFixed(2)).replace(new RegExp('[.]','gi'), ',');
+						new_parameter.value_graphic = ("" + value.toFixed(2)).replace(new RegExp('[.]','gi'), ',');
+
+						if(new_parameter.default_value_min != null && new_parameter.default_value_min.length > 0){
+							new_parameter.default_value_min = new_parameter.default_value_min.replace(new RegExp('[.]','gi'), ',')
+						}
+
+						if(new_parameter.default_value_max != null && new_parameter.default_value_max.length > 0){
+							new_parameter.default_value_max = new_parameter.default_value_max.replace(new RegExp('[.]','gi'), ',')
+						}
+
+						resolve({status: true, new_parameter: new_parameter});
+
+					}).catch(function(err) {
+						// print the error details
+						console.log("duplicateCollectSystemParameters: " + err);
+					});
+	
+					
+				} catch (error) {
+					resolve({status: false, error: error});
+				}
+			});
 		}
 
 		app.set('models', {
@@ -300,6 +610,47 @@ module.exports = function Database(app) {
 			Parameter,
 			CollectSystemParameter
 		});
+	}
+
+	function formatWord (text){       
+	    text = text.toLowerCase();                     
+	    text = text.replace(new RegExp('[ÁÀÂÃ]','gi'), 'a');
+	    text = text.replace(new RegExp('[ÉÈÊ]','gi'), 'e');
+	    text = text.replace(new RegExp('[ÍÌÎ]','gi'), 'i');
+	    text = text.replace(new RegExp('[ÓÒÔÕ]','gi'), 'o');
+	    text = text.replace(new RegExp('[ÚÙÛ]','gi'), 'u');
+	    text = text.replace(new RegExp('[Ç]','gi'), 'c');
+	    text = text.replace(new RegExp('[Ç]','gi'), 'c');
+		text = text.replace(new RegExp('[-]','gi'), '');
+		text = text.replace(new RegExp('[(]','gi'), '');
+		text = text.replace(new RegExp('[)]','gi'), '');
+		text = text.replace(new RegExp('[.]','gi'), '');
+		text = text.replace(new RegExp('[,]','gi'), '');
+		text = text.replace(new RegExp('[/]','gi'), '');
+		text = text.replace(new RegExp('[*]','gi'), '');
+		text = text.replace(new RegExp('[_]','gi'), '');
+	    return text;                 
+	}
+
+    function formatTerm (text){       
+	    text = text.toLowerCase();                     
+        text = text.replace(new RegExp('[ ]','gi'), '');
+	    text = text.replace(new RegExp('[ÁÀÂÃ]','gi'), 'a');
+	    text = text.replace(new RegExp('[ÉÈÊ]','gi'), 'e');
+	    text = text.replace(new RegExp('[ÍÌÎ]','gi'), 'i');
+	    text = text.replace(new RegExp('[ÓÒÔÕ]','gi'), 'o');
+	    text = text.replace(new RegExp('[ÚÙÛ]','gi'), 'u');
+	    text = text.replace(new RegExp('[Ç]','gi'), 'c');
+	    text = text.replace(new RegExp('[Ç]','gi'), 'c');
+		text = text.replace(new RegExp('[-]','gi'), '');
+		text = text.replace(new RegExp('[(]','gi'), '');
+		text = text.replace(new RegExp('[)]','gi'), '');
+		text = text.replace(new RegExp('[.]','gi'), '');
+		text = text.replace(new RegExp('[,]','gi'), '');
+		text = text.replace(new RegExp('[/]','gi'), '');
+		text = text.replace(new RegExp('[*]','gi'), '');
+		text = text.replace(new RegExp('[_]','gi'), '');
+	    return text;                 
 	}
 	
 	return {

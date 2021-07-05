@@ -36,6 +36,9 @@ module.exports = function(app) {
 		.get(controllerCollect.getCollects)
 		.delete(controllerCollect.deleteCollect);
 
+		app.route('/api/private/admin/collects/getCollectReport')
+		.get(controllerCollect.getCollectReport);
+
 		app.route('/api/private/admin/collects/updateParameters')
 		.post(controllerCollect.updateParameters);
 
