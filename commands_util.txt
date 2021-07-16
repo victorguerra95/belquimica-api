@@ -1,0 +1,24 @@
+pg_dump postgresql://postgres:'E8F!x79$fAtH$T'@143.198.237.70:5432/camiquibel-oabsdewg-regkj > camiquibel-oabsdewg-regkj.bak
+
+psql camiquibel-test < camiquibel-oabsdewg-regkj.bak
+
+admbelquimica.vupapp.com
+
+sudo chown -R $USER:$USER /var/www/admbelquimica.vupapp.com/html
+
+
+sudo cp /etc/nginx/sites-available/default /etc/nginx/sites-available/admbelquimica.vupapp.com
+
+sudo nano /etc/nginx/sites-available/admbelquimica.vupapp.com
+
+sudo ln -s /etc/nginx/sites-available/admbelquimica.vupapp.com /etc/nginx/sites-enabled/
+
+sudo certbot --nginx -d admbelquimica.vupapp.com -d www.admbelquimica.vupapp.com
+
+
+sudo certbot --nginx -d admbelquimica.vupapp.com -d www.admbelquimica.vupapp.com
+
+
+sudo rsync -av root/vgdev/belquimica-web/dist var/www/admbelquimica.vupapp.com/html
+
+sudo systemctl restart nginx

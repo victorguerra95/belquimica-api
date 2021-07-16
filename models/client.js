@@ -115,10 +115,17 @@ module.exports = function(app) {
                                                 model: System
                                             }
                                         ]
+                                    },
+                                    {
+                                        model: Collect,
+                                        limit: 1,
+                                        order: [
+                                            ["id", "DESC"]
+                                        ]
                                     }
                                 ],
                                 order: [
-                                    ["name", "ASC"]
+                                    ["id", "DESC"]
                                 ],
                                 offset: off,
                                 //limit: 30,

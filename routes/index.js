@@ -48,6 +48,9 @@ module.exports = function(app) {
 		app.route('/api/private/admin/collects/updateCollectSystem')
 		.post(controllerCollect.updateCollectSystem);
 
+		app.route('/api/private/admin/collects/duplicateCollectSystem')
+		.post(controllerCollect.duplicateCollectSystem);
+
 		app.route('/api/private/admin/points')
 		.get(controllerCollect.getPoints);
 

@@ -101,6 +101,10 @@ module.exports = function Database(app) {
 				type: Sequelize.BOOLEAN,
 				defaultValue: false
 			},
+			chart_show: {
+				type: Sequelize.BOOLEAN,
+				defaultValue: false
+			}
 		}, tableDefaultMetadata);
 
 		const CollectSystem = sequelize.define('collect_systems', {
@@ -386,6 +390,20 @@ module.exports = function Database(app) {
 									user_type_id: 1
 								}).then(data => {
 									console.log("User dev created: " + data);
+
+									new_user = {
+										email: "victor@belquimica.ind.br",
+										firebase_uid: "JU2uOnWNX9YYDqoab2KaOjdvKwF2"
+									};
+					
+									User.create({
+										email: new_user.email,
+										firebase_uid: new_user.firebase_uid,
+										user_type_id: 1
+									}).then(data => {
+										console.log("User dev created: " + data);
+									});
+
 								});
 							}
 						});

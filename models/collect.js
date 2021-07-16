@@ -1,3 +1,5 @@
+const { models } = require('mongoose');
+
 module.exports = function(app) {
 	'use strict';
 
@@ -177,6 +179,167 @@ module.exports = function(app) {
     }
 
     function getCollectReport(firebase_uid, filter) {
+
+        return new Promise((resolve, reject) => {
+
+            try {
+
+                User.findOne({
+                    where: {
+                        firebase_uid: firebase_uid
+                    }
+                }).then(userData => {	
+
+                    if(userData != null){
+                        
+                        if(filter.collect_id){
+
+                            Collect.findOne({
+                                where: {
+                                    id: filter.collect_id
+                                },
+                                include: [
+                                    {
+                                        model: Client
+                                    },
+                                    {
+                                        model: CollectSystem,
+                                        include: [
+                                            {
+                                                model: System
+                                            },
+                                            {
+                                                model: CollectSystemParameter,
+                                                include: [
+                                                    {
+                                                        model: Parameter
+                                                    }
+                                                ],
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }).then(collect_data => {
+
+                                let collect_data_edit = JSON.parse(JSON.stringify(collect_data));
+
+                                let flow = async () => {
+											
+                                    try {
+                                        var error = false;
+                                        //for (let index = 0; index < mock_data.systems.length; index++) {
+                                        for (let index = 0; index < collect_data_edit.collect_systems.length; index++) {
+                                            var collect_system = collect_data_edit.collect_systems[index];
+                                            var result = await getDataReportForSystem(collect_data_edit, collect_system);
+                                            if(result.status == false){
+                                                error = true;
+                                                break;
+                                            }else{
+                                                collect_data_edit.collect_systems[index].data_report = result.data_report;
+
+                                                var parameters_legnth = result.data_report.length;
+                                                var calc_pages = parameters_legnth / 5;
+                                                var round_calc_pages = Math.round(calc_pages);
+                                                var pages = round_calc_pages;
+                                                if(calc_pages > round_calc_pages){
+                                                    pages++;
+                                                }
+
+                                                collect_data_edit.collect_systems[index].pages = new Array(pages);
+                                            }
+                                        }
+                                        
+                                        if(!error){
+                                            resolve({code: 200, response: { collect: collect_data_edit, data_report: collect_data_edit.collect_systems[0].data_report } });
+                                            
+                                        }else{
+                                            resolve({code: 500, message: "unexpected_error"});
+                                        }
+        
+                                        return error;
+        
+                                    } catch (error) {
+                                        resolve({code: 500, message: "unexpected_error"});
+                                        return false;
+                                    }               
+                                }
+                                
+                                flow().then((value) => {
+                                    console.log("getCollectReport: " + value);
+                                });	
+                                
+                            });
+
+                        }else{
+                            resolve({code: 500, message: "unexpected_error"});    
+                        }
+
+                    }else{
+                        resolve({code: 500, message: "unexpected_error"});
+                    }
+
+                });
+                
+            } catch (error) {
+                resolve({code: 500, message: "unexpected_error"});
+            }
+
+        });
+    }
+
+    function getDataReportForSystem(collect_data, collect_system){
+        return new Promise(function (resolve, reject) {
+
+            try {
+
+                let report_graph = collect_system.collect_system_parameters.map(function(csp) {
+                    return csp.parameter.id;
+                });
+
+                Parameter.findAll({
+                    where: {
+                        id: {
+                            in: report_graph
+                        }
+                    },
+                    include: [
+                        {
+                            model: CollectSystemParameter,
+                            include : [
+                                {
+                                    model: CollectSystem,
+                                    where: {
+                                        system_id: collect_system.system_id
+                                    },
+                                    include : [
+                                        {
+                                            model: Collect,
+                                            where: {
+                                                client_id: collect_data.client_id
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ],
+                    order: [
+                        [ 'id', 'DESC' ]
+                    ]
+                }).then(data_report => {
+
+                    resolve({status: true, data_report: data_report });
+
+                });
+
+                
+            } catch (error) {
+                resolve({status: false, error: error});
+            }
+        });
+    }
+
+    function getCollectReportBk(firebase_uid, filter) {
 
         return new Promise((resolve, reject) => {
 
@@ -554,7 +717,7 @@ module.exports = function(app) {
                     if(userData != null){
 
                         let collect_data_to_update = {};
-                        let parameters_parser_arr = ["collect_date", "analysis_date", "report_shared"];
+                        let parameters_parser_arr = ["collect_date", "analysis_date", "report_shared", "chart_show"];
                         parameters_parser_arr.forEach(param => {
                             if(data[param] != null){
                                 collect_data_to_update[param] = data[param];
@@ -624,6 +787,208 @@ module.exports = function(app) {
     }
 
     function updateParameters(firebase_uid, filter, data) {
+
+        return new Promise((resolve, reject) => {
+
+            try {
+
+                User.findOne({
+                    where: {
+                        firebase_uid: firebase_uid
+                    }
+                }).then(userData => {	
+
+                    if(userData != null){
+
+                        Collect.findOne({
+                            where: {
+                                id: data.id
+                            },
+                            include: [
+                                {
+                                    model: CollectSystem,
+                                    attributes: ['id'],
+                                    include: [
+                                        {
+                                            model: System,
+                                            attributes: []
+                                        },
+                                        {
+                                            model: CollectSystemParameter,
+                                            include: [
+                                                {
+                                                    model: Parameter,
+                                                    attributes: ['id'],
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }).then(collect_found => {	
+
+                            if(collect_found != null){
+                                /*
+                                let collect_systems_parameters_current_ids = collect_found;
+                                array.forEach(element => {
+                                    
+                                });*/
+
+                                console.log("collect_found");
+
+                                let flow = async () => {
+                                        
+                                    try {
+                                        let new_parameters = []; 
+                                        let error = false;
+                                        for (let collect_system_index = 0; collect_system_index < data.collect_systems.length; collect_system_index++) {
+
+                                            let collect_system = data.collect_systems[collect_system_index];
+
+                                            for (let system_parameter_index = 0; system_parameter_index < collect_system.collect_system_parameters.length; system_parameter_index++) {
+                                                
+                                                let system_parameter = collect_system.collect_system_parameters[system_parameter_index];
+
+                                                let result = await createNewCollectSystemParameter(collect_system.id, system_parameter);
+                                                if(result.status == false){
+                                                    error = true;
+                                                    break;
+                                                }else{
+                                                    new_parameters.push(result.new_collect_system_parameter);
+                                                }
+
+                                            }
+
+                                        }
+                                        
+                                        if(!error){
+
+                                            let collect_systems_parameters_current_ids = [];
+                                            collect_found.collect_systems.forEach(cs => {
+                                                let parameters_id = cs.collect_system_parameters.map(function(csp) {
+                                                    return csp.id;
+                                                });
+                                                collect_systems_parameters_current_ids = collect_systems_parameters_current_ids.concat(parameters_id);
+                                            });
+                                            
+                                            CollectSystemParameter.destroy({
+                                                force: true,
+                                                where: {
+                                                    id: {
+                                                        in: collect_systems_parameters_current_ids
+                                                    }
+                                                }
+                                            }).then(destroy_data => {
+
+                                                console.log("destroy_data: " + JSON.stringify(destroy_data));
+
+                                                CollectSystemParameter.bulkCreate(new_parameters, {
+                                                    fields: ["collect_system_id", "parameter_id", "unit", "value", "value_graphic", "default_value_min", "default_value_max", "factor_value_graphic"]
+                                                }).then(collect_system_parameters_data => {
+
+                                                    console.log("bulk");
+                                                    //console.log(JSON.stringify(collect_system_parameters_data));
+                                                    
+                                                    resolve({code: 200, response: true });
+            
+                                                }).catch(function(err) {
+                                                    // print the error details
+                                                    console.log("updateParameters | CollectSystemParameter.bulkCreate: " + err);
+                                                    resolve({code: 500, message: "unexpected_error"});
+                                                });
+
+                                                
+
+                                            }).catch(function(err) {
+                                                // print the error details
+                                                console.log("updateParameters | CollectSystemParameter.destroy: " + err);
+                                                resolve({code: 500, message: "unexpected_error"});
+                                            }); 
+                                            
+                                        }else{
+                                            resolve({code: 500, message: "unexpected_error"});
+                                        }
+
+                                        return error;
+
+                                    } catch (error) {
+
+                                        resolve({code: 500, message: "unexpected_error"});
+                                        return false;
+                                    }               
+                                }
+                                
+                                flow().then((value) => {
+                                    console.log("updateParameters: " + value);
+                                });	
+
+                            }else{
+                                resolve({code: 500, message: "unexpected_error"});
+                            }
+
+                        });
+
+                    }else{
+                        resolve({code: 500, message: "unexpected_error"});
+                    }
+
+                });
+                
+            } catch (error) {
+                resolve({code: 500, message: "unexpected_error"});
+            }
+
+        });
+    }
+
+    function createNewCollectSystemParameter(collect_system_id, collect_system_parameter_data){
+        return new Promise(function (resolve, reject) {
+
+            try {
+
+                let name = collect_system_parameter_data.parameter.name;
+                let name_term = formatTerm(name);
+
+                Parameter.findOrCreate({
+                    where: {
+                        name_term: name_term
+                    },
+                    defaults: {
+                        name: name,
+                        name_term: name_term
+                    }
+                }).then(parameter_find_data => {	
+                    
+                    let parameter_data = JSON.parse(JSON.stringify(parameter_find_data[0]));
+
+                    let new_collect_system_parameter = {
+                        collect_system_id: collect_system_id,
+                        parameter_id: parameter_data.id
+                    };
+
+                    var parameters_parser_arr = ["unit", "value", "value_graphic", "default_value_min", "default_value_max", "factor_value_graphic"];
+                    parameters_parser_arr.forEach(param => {
+                        if(collect_system_parameter_data[param] != null){
+                            new_collect_system_parameter[param] = collect_system_parameter_data[param];
+                        }
+                    });
+
+                    resolve({status: true, new_collect_system_parameter: new_collect_system_parameter});
+                    
+                }).catch(function(err) {
+                    // print the error details
+                    console.log("createNewCollectSystemParameter: " + err);
+                    resolve({status: false, error: error});
+                });
+
+                
+            } catch (error) {
+                resolve({status: false, error: error});
+            }
+        });
+    }
+
+    function updateParameters2(firebase_uid, filter, data) {
 
         return new Promise((resolve, reject) => {
 
@@ -929,6 +1294,120 @@ module.exports = function(app) {
         });
     }
 
+    function duplicateCollectSystem(firebase_uid, filter) {
+
+        return new Promise((resolve, reject) => {
+
+            try {
+
+                User.findOne({
+                    where: {
+                        firebase_uid: firebase_uid
+                    }
+                }).then(userData => {	
+
+                    if(userData != null && filter.origin_id != null && filter.destiny_id != null){
+
+                        CollectSystem.findOne({
+                            where: {
+                                id: parseInt(filter.origin_id)
+                            },
+                            include: [
+                                {
+                                    model: System
+                                },
+                                {
+                                    model: CollectSystemParameter,
+                                    include: [
+                                        {
+                                            model: Parameter
+                                        }
+                                    ]
+                                }
+                            ]
+                        }).then(full_collect_system_data => {
+
+                            if(full_collect_system_data != null){
+
+                                let data_to_create_collect_system = { system_id: filter.destiny_id };
+                                let parameters_parser_arr = ["collect_id", "input_comments"];
+                                parameters_parser_arr.forEach(param => {
+                                    if(full_collect_system_data[param] != null){
+                                        data_to_create_collect_system[param] = full_collect_system_data[param];
+                                    }
+                                });
+
+                                CollectSystem.create(data_to_create_collect_system).then(new_collect_system_data => {
+
+                                    /*
+                                    let parameters_new = full_collect_system_data.collect_system_parameters.map(function(csp) {
+                                        delete csp.createdAt;
+                                        delete csp.updatedAt;
+                                        delete csp.id;
+                                        csp.collect_system_id = new_collect_system_data.id;
+                                        return csp;
+                                    });*/
+                                    let parameters_new = [];
+                                    for (let index_copy_parameter = 0; index_copy_parameter <  full_collect_system_data.collect_system_parameters.length; index_copy_parameter++) {
+                                        let param =  JSON.parse(JSON.stringify(full_collect_system_data.collect_system_parameters[index_copy_parameter]));
+                                        delete param.createdAt;
+                                        delete param.updatedAt;
+                                        delete param.id;
+                                        param.collect_system_id = new_collect_system_data.id;
+                                        parameters_new.push(param);
+                                    }
+
+                                    CollectSystemParameter.bulkCreate(parameters_new, {
+                                        fields: ['collect_system_id', 'parameter_id', 'unit', 'value', 'value_graphic', 'default_value_min', 'default_value_max', 'factor_value_graphic']
+                                    }).then(collect_system_parameter_created_data => {
+
+                                        CollectSystem.findOne({
+                                            where: {
+                                                id: new_collect_system_data.id
+                                            },
+                                            include: [
+                                                {
+                                                    model: System
+                                                },
+                                                {
+                                                    model: CollectSystemParameter,
+                                                    include: [
+                                                        {
+                                                            model: Parameter
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }).then(collect_system_data_final_result => {
+
+                                            resolve({ code: 200, response: collect_system_data_final_result });
+
+                                        });
+
+                                    });
+
+                                });
+
+
+                            }else{
+                                resolve({code: 500, message: "unexpected_error"});
+                            }
+
+                        });
+
+                    }else{
+                        resolve({code: 500, message: "unexpected_error"});
+                    }
+
+                });
+                
+            } catch (error) {
+                resolve({code: 500, message: "unexpected_error"});
+            }
+
+        });
+    }
+
     function formatWord (text){       
 	    text = text.toLowerCase();                     
 	    text = text.replace(new RegExp('[ÁÀÂÃ]','gi'), 'a');
@@ -979,6 +1458,7 @@ module.exports = function(app) {
         updateParameters,
         updateSystems,
         updateCollectSystem,
-        getCollectReport
+        getCollectReport,
+        duplicateCollectSystem
 	};
 };
