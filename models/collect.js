@@ -1,4 +1,5 @@
 const { models } = require('mongoose');
+const database = require('./database');
 
 module.exports = function(app) {
 	'use strict';
@@ -69,8 +70,12 @@ module.exports = function(app) {
                                                     }
                                                 ]
                                             }
-                                        ]
+                                        ],
                                     }
+                                ],
+                                order: [
+                                    [ CollectSystem, 'id', 'ASC' ],
+                                    [ CollectSystem, CollectSystemParameter, 'id', 'ASC' ]
                                 ]
                             }).then(collect_data => {
 
@@ -147,7 +152,8 @@ module.exports = function(app) {
                                     }
                                 ],
                                 order: [
-                                    ["id", "DESC"]
+                                    ["id", "DESC"],
+                                    [ CollectSystem, 'id', 'ASC' ]
                                 ],
                                 offset: off,
                                 //limit: 30,
@@ -218,6 +224,10 @@ module.exports = function(app) {
                                             }
                                         ]
                                     }
+                                ],
+                                order: [
+                                    [ CollectSystem, 'id', 'ASC' ],
+                                    [ CollectSystem, CollectSystemParameter, 'id', 'ASC' ]
                                 ]
                             }).then(collect_data => {
 
@@ -525,6 +535,10 @@ module.exports = function(app) {
                                             }
                                         ]
                                     }
+                                ],
+                                order: [
+                                    [ CollectSystem, 'id', 'ASC' ],
+                                    [ CollectSystem, CollectSystemParameter, 'id', 'ASC' ]
                                 ]
                             }).then(collect_origin => {	
 
@@ -834,93 +848,106 @@ module.exports = function(app) {
                                     
                                 });*/
 
-                                console.log("collect_found");
+                                let collect_data_to_update = {};
+                                let parameters_parser_arr = ["collect_date", "analysis_date", "report_shared", "chart_show"];
+                                parameters_parser_arr.forEach(param => {
+                                    if(data[param] != null){
+                                        collect_data_to_update[param] = data[param];
+                                    }
+                                });
 
-                                let flow = async () => {
-                                        
-                                    try {
-                                        let new_parameters = []; 
-                                        let error = false;
-                                        for (let collect_system_index = 0; collect_system_index < data.collect_systems.length; collect_system_index++) {
+                                Collect.update(collect_data_to_update, {where:  {id: collect_found.id} }).then(itemDataUpdate => {	
+                                    
+                                    console.log("collect_found");
 
-                                            let collect_system = data.collect_systems[collect_system_index];
+                                    let flow = async () => {
+                                            
+                                        try {
+                                            let new_parameters = []; 
+                                            let error = false;
+                                            for (let collect_system_index = 0; collect_system_index < data.collect_systems.length; collect_system_index++) {
 
-                                            for (let system_parameter_index = 0; system_parameter_index < collect_system.collect_system_parameters.length; system_parameter_index++) {
-                                                
-                                                let system_parameter = collect_system.collect_system_parameters[system_parameter_index];
+                                                let collect_system = data.collect_systems[collect_system_index];
 
-                                                let result = await createNewCollectSystemParameter(collect_system.id, system_parameter);
-                                                if(result.status == false){
-                                                    error = true;
-                                                    break;
-                                                }else{
-                                                    new_parameters.push(result.new_collect_system_parameter);
+                                                for (let system_parameter_index = 0; system_parameter_index < collect_system.collect_system_parameters.length; system_parameter_index++) {
+                                                    
+                                                    let system_parameter = collect_system.collect_system_parameters[system_parameter_index];
+
+                                                    let result = await createNewCollectSystemParameter(collect_system.id, system_parameter);
+                                                    if(result.status == false){
+                                                        error = true;
+                                                        break;
+                                                    }else{
+                                                        new_parameters.push(result.new_collect_system_parameter);
+                                                    }
+
                                                 }
 
                                             }
-
-                                        }
-                                        
-                                        if(!error){
-
-                                            let collect_systems_parameters_current_ids = [];
-                                            collect_found.collect_systems.forEach(cs => {
-                                                let parameters_id = cs.collect_system_parameters.map(function(csp) {
-                                                    return csp.id;
-                                                });
-                                                collect_systems_parameters_current_ids = collect_systems_parameters_current_ids.concat(parameters_id);
-                                            });
                                             
-                                            CollectSystemParameter.destroy({
-                                                force: true,
-                                                where: {
-                                                    id: {
-                                                        in: collect_systems_parameters_current_ids
+                                            if(!error){
+
+                                                let collect_systems_parameters_current_ids = [];
+                                                collect_found.collect_systems.forEach(cs => {
+                                                    let parameters_id = cs.collect_system_parameters.map(function(csp) {
+                                                        return csp.id;
+                                                    });
+                                                    collect_systems_parameters_current_ids = collect_systems_parameters_current_ids.concat(parameters_id);
+                                                });
+                                                
+                                                CollectSystemParameter.destroy({
+                                                    force: true,
+                                                    where: {
+                                                        id: {
+                                                            in: collect_systems_parameters_current_ids
+                                                        }
                                                     }
-                                                }
-                                            }).then(destroy_data => {
+                                                }).then(destroy_data => {
 
-                                                console.log("destroy_data: " + JSON.stringify(destroy_data));
+                                                    console.log("destroy_data: " + JSON.stringify(destroy_data));
 
-                                                CollectSystemParameter.bulkCreate(new_parameters, {
-                                                    fields: ["collect_system_id", "parameter_id", "unit", "value", "value_graphic", "default_value_min", "default_value_max", "factor_value_graphic"]
-                                                }).then(collect_system_parameters_data => {
+                                                    CollectSystemParameter.bulkCreate(new_parameters, {
+                                                        fields: ["collect_system_id", "parameter_id", "unit", "value", "value_graphic", "default_value_min", "default_value_max", "factor_value_graphic"]
+                                                    }).then(collect_system_parameters_data => {
 
-                                                    console.log("bulk");
-                                                    //console.log(JSON.stringify(collect_system_parameters_data));
+                                                        console.log("bulk");
+                                                        //console.log(JSON.stringify(collect_system_parameters_data));
+                                                        
+                                                        resolve({code: 200, response: true });
+                
+                                                    }).catch(function(err) {
+                                                        // print the error details
+                                                        console.log("updateParameters | CollectSystemParameter.bulkCreate: " + err);
+                                                        resolve({code: 500, message: "unexpected_error"});
+                                                    });
+
                                                     
-                                                    resolve({code: 200, response: true });
-            
+
                                                 }).catch(function(err) {
                                                     // print the error details
-                                                    console.log("updateParameters | CollectSystemParameter.bulkCreate: " + err);
+                                                    console.log("updateParameters | CollectSystemParameter.destroy: " + err);
                                                     resolve({code: 500, message: "unexpected_error"});
-                                                });
-
+                                                }); 
                                                 
-
-                                            }).catch(function(err) {
-                                                // print the error details
-                                                console.log("updateParameters | CollectSystemParameter.destroy: " + err);
+                                            }else{
                                                 resolve({code: 500, message: "unexpected_error"});
-                                            }); 
-                                            
-                                        }else{
+                                            }
+
+                                            return error;
+
+                                        } catch (error) {
+
                                             resolve({code: 500, message: "unexpected_error"});
-                                        }
+                                            return false;
+                                        }               
+                                    }
+                                    
+                                    flow().then((value) => {
+                                        console.log("updateParameters: " + value);
+                                    });	
 
-                                        return error;
 
-                                    } catch (error) {
-
-                                        resolve({code: 500, message: "unexpected_error"});
-                                        return false;
-                                    }               
-                                }
-                                
-                                flow().then((value) => {
-                                    console.log("updateParameters: " + value);
-                                });	
+                                });
 
                             }else{
                                 resolve({code: 500, message: "unexpected_error"});
@@ -1324,6 +1351,9 @@ module.exports = function(app) {
                                         }
                                     ]
                                 }
+                            ],
+                            order: [
+                                [ CollectSystemParameter, 'id', 'ASC' ]
                             ]
                         }).then(full_collect_system_data => {
 
@@ -1377,6 +1407,9 @@ module.exports = function(app) {
                                                         }
                                                     ]
                                                 }
+                                            ],
+                                            order: [
+                                                [ CollectSystemParameter, 'id', 'ASC' ]
                                             ]
                                         }).then(collect_system_data_final_result => {
 
