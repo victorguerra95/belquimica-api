@@ -325,8 +325,11 @@ module.exports = function(app) {
                                         {
                                             model: Collect,
                                             where: {
-                                                client_id: collect_data.client_id
-                                            }
+                                                client_id: collect_data.client_id,
+                                                collect_date: {
+                                                    not: null
+                                                }
+                                            },
                                         }
                                     ]
                                 }
@@ -334,7 +337,8 @@ module.exports = function(app) {
                         }
                     ],
                     order: [
-                        [ 'id', 'DESC' ]
+                        [ 'id', 'DESC' ],
+                        [ CollectSystemParameter, CollectSystem, Collect, 'collect_date', 'ASC' ]
                     ]
                 }).then(data_report => {
 
