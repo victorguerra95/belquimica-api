@@ -1,5 +1,3 @@
-const { models } = require('mongoose');
-const database = require('./database');
 
 module.exports = function(app) {
 	'use strict';
@@ -872,6 +870,11 @@ module.exports = function(app) {
                                             for (let collect_system_index = 0; collect_system_index < data.collect_systems.length; collect_system_index++) {
 
                                                 let collect_system = data.collect_systems[collect_system_index];
+                                                let result_cs_update = await updateCollectSystemAsync(collect_system);
+                                                if(result_cs_update.status == false){
+                                                    error = true;
+                                                    break;
+                                                }
 
                                                 for (let system_parameter_index = 0; system_parameter_index < collect_system.collect_system_parameters.length; system_parameter_index++) {
                                                     
@@ -967,6 +970,30 @@ module.exports = function(app) {
                 
             } catch (error) {
                 resolve({code: 500, message: "unexpected_error"});
+            }
+
+        });
+    }
+
+    function updateCollectSystemAsync(collect_system){
+        return new Promise(function (resolve, reject) {
+
+            try {
+                
+                let data_to_update = { input_comments: collect_system.input_comments };
+
+                CollectSystem.update(data_to_update, {where:  {id: collect_system.id } }).then(itemDataUpdate => {	
+
+                    resolve({status: true});
+
+                }).catch(function(err) {
+                    // print the error details
+                    console.log("updateCollectSystem: " + err);
+                    resolve({status: false, error: error});
+                });
+                
+            } catch (error) {
+                resolve({status: false, error: error});
             }
 
         });

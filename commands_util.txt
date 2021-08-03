@@ -22,3 +22,5 @@ sudo certbot --nginx -d admbelquimica.vupapp.com -d www.admbelquimica.vupapp.com
 sudo rsync -av root/vgdev/belquimica-web/dist var/www/admbelquimica.vupapp.com/html
 
 sudo systemctl restart nginx
+
+pm2 start server.js --name "bel"
