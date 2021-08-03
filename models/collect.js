@@ -303,12 +303,45 @@ module.exports = function(app) {
                 let report_graph = collect_system.collect_system_parameters.map(function(csp) {
                     return csp.parameter.id;
                 });
-
-                Parameter.findAll({
+                /*
+                CollectSystemParameter.findAll({
                     where: {
-                        id: {
+                        parameter_id: {
                             in: report_graph
                         }
+                    },
+                    include: [
+                        {
+                            model: CollectSystem,
+                            where: {
+                                system_id: collect_system.system_id
+                            },
+                            include : [
+                                {
+                                    model: Collect,
+                                    where: {
+                                        client_id: collect_data.client_id,
+                                        collect_date: {
+                                            not: null
+                                        }
+                                    },
+                                }
+                            ]
+                        }
+                    ],
+                    order: [
+                        [ 'id', 'ASC' ],
+                        [ CollectSystem, Collect, 'collect_date', 'ASC' ]
+                    ]
+                }).then(data_report => {
+
+                    resolve({status: true, data_report: data_report });
+
+                });*/
+                
+                Parameter.findAll({
+                    where: {
+                        id: report_graph
                     },
                     include: [
                         {
@@ -335,12 +368,22 @@ module.exports = function(app) {
                         }
                     ],
                     order: [
-                        [ 'id', 'DESC' ],
+                        //[ 'id', 'ASC' ],
                         [ CollectSystemParameter, CollectSystem, Collect, 'collect_date', 'ASC' ]
                     ]
                 }).then(data_report => {
 
-                    resolve({status: true, data_report: data_report });
+                    let data_report_id_indeces = data_report.map(function(data) {
+                        return data.id;
+                    });
+
+                    var data_report_ordered = [];
+                    report_graph.forEach(id => {
+                        var index_target = data_report_id_indeces.indexOf(id);
+                        data_report_ordered.push(data_report[index_target]);
+                    });
+
+                    resolve({ status: true, data_report: data_report_ordered });
 
                 });
 
