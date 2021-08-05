@@ -238,14 +238,28 @@ module.exports = function(app) {
                                         //for (let index = 0; index < mock_data.systems.length; index++) {
                                         for (let index = 0; index < collect_data_edit.collect_systems.length; index++) {
                                             var collect_system = collect_data_edit.collect_systems[index];
-                                            var result = await getDataReportForSystem(collect_data_edit, collect_system);
-                                            if(result.status == false){
-                                                error = true;
-                                                break;
-                                            }else{
-                                                collect_data_edit.collect_systems[index].data_report = result.data_report;
+                                            
+                                            for (let index_parameter = 0; index_parameter < collect_system.collect_system_parameters.length; index_parameter++) {
+                                                let cs_parameter_c = collect_system.collect_system_parameters[index_parameter];
 
-                                                var parameters_legnth = result.data_report.length;
+                                                var result = await getDataReportForSystemParameter(cs_parameter_c, collect_data_edit, collect_system);
+                                                if(result.status == false){
+                                                    error = true;
+                                                    break;
+                                                }else{
+
+                                                    if(collect_data_edit.collect_systems[index].data_report == null){
+                                                        collect_data_edit.collect_systems[index].data_report = [];
+                                                    }
+                                                    let new_data_report = JSON.parse(JSON.stringify(cs_parameter_c.parameter));
+                                                    new_data_report.collect_system_parameters = JSON.parse(JSON.stringify(result.data));
+                                                    collect_data_edit.collect_systems[index].data_report.push(new_data_report);
+                                                }
+                                                
+                                            }
+
+                                            if(!error){
+                                                var parameters_legnth = collect_data_edit.collect_systems[index].data_report.length;
                                                 var calc_pages = parameters_legnth / 5;
                                                 var round_calc_pages = Math.round(calc_pages);
                                                 var pages = round_calc_pages;
@@ -255,9 +269,12 @@ module.exports = function(app) {
 
                                                 collect_data_edit.collect_systems[index].pages = new Array(pages);
                                             }
+
+                                            
                                         }
                                         
                                         if(!error){
+
                                             resolve({code: 200, response: { collect: collect_data_edit, data_report: collect_data_edit.collect_systems[0].data_report } });
                                             
                                         }else{
@@ -292,6 +309,52 @@ module.exports = function(app) {
                 resolve({code: 500, message: "unexpected_error"});
             }
 
+        });
+    }
+
+    function getDataReportForSystemParameter(cs_parameter_data, collect_data, collect_system){
+        return new Promise(function (resolve, reject) {
+
+            try {
+                console.log("collect_data.collect_date: " + collect_data.collect_date);
+                CollectSystemParameter.findAll({
+                    where: {
+                        parameter_id: cs_parameter_data.parameter_id
+                    },
+                    include: [
+                        {
+                            model: CollectSystem,
+                            where: {
+                                system_id: collect_system.system_id
+                            },
+                            include : [
+                                {
+                                    model: Collect,
+                                    where: {
+                                        client_id: collect_data.client_id,
+                                        collect_date: {
+                                            not: null,
+                                            lte: collect_data.collect_date
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    limit: 12,
+                    order: [
+                        //[ 'id', 'ASC' ],
+                        [ CollectSystem, Collect, 'collect_date', 'DESC' ]
+                    ]
+                }).then(data => {
+                    resolve({ status: true, data: data });
+    
+                });
+
+                
+            } catch (error) {
+                resolve({status: false, error: error});
+            }
         });
     }
 
@@ -338,6 +401,10 @@ module.exports = function(app) {
                     resolve({status: true, data_report: data_report });
 
                 });*/
+
+                console.log("report_graph: " + JSON.stringify(report_graph));
+                console.log("system_id: " + collect_system.system_id);
+                console.log("collect_data.client_id: " + collect_data.client_id);
                 
                 Parameter.findAll({
                     where: {
@@ -588,6 +655,7 @@ module.exports = function(app) {
                             }).then(collect_origin => {	
 
                                 Collect.create({
+                                    chart_show: collect_origin.chart_show
                                 }).then(new_collect_created => {	
                                     
                                     //resolve({code: 200, response: collectCreated });

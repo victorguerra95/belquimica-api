@@ -24,3 +24,5 @@ sudo rsync -av root/vgdev/belquimica-web/dist var/www/admbelquimica.vupapp.com/h
 sudo systemctl restart nginx
 
 pm2 start server.js --name "bel"
+
+pm2 delete "bel"
