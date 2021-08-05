@@ -341,7 +341,7 @@ module.exports = function(app) {
                             ]
                         }
                     ],
-                    limit: 12,
+                    limit: 13,
                     order: [
                         //[ 'id', 'ASC' ],
                         [ CollectSystem, Collect, 'collect_date', 'DESC' ]
