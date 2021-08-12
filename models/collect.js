@@ -103,13 +103,28 @@ module.exports = function(app) {
                                     lte: moment(new Date(filter.dt_until)).format("YYYY-MM-DD") + " 23:59:59.999+00"
                                 }
                             };*/
-
+                            /*
                             var whereStament = {
                                 created_at: {
                                     gte: moment(new Date(filter.dt_from)).subtract(1, 'd').format("YYYY-MM-DD") + " 21:00:00.000+00",
                                     lte: moment(new Date(filter.dt_until)).add(1, 'd').format("YYYY-MM-DD") + " 02:59:59.999+00"
                                 }
-                            };
+                            };*/
+
+                            var whereStament = {}
+
+                            whereStament.$or = [
+                                {
+                                    collect_date: {
+                                        gte: moment(new Date(filter.dt_from)).subtract(1, 'd').format("YYYY-MM-DD") + " 21:00:00.000+00",
+                                        lte: moment(new Date(filter.dt_until)).add(1, 'd').format("YYYY-MM-DD") + " 02:59:59.999+00"
+                                    }
+                                },
+                                {
+                                    collect_date: null
+                                }
+                            ];
+                            
 
                             //console.log("a:"+ JSON.stringify(whereStament));
 
