@@ -95,46 +95,33 @@ module.exports = function(app) {
                             });
 
                         }else{
-                            
-                            /*
-                            var whereStament = {
-                                created_at: {
-                                    gte: moment(new Date(filter.dt_from)).format("YYYY-MM-DD") + " 00:00:00.000+00",
-                                    lte: moment(new Date(filter.dt_until)).format("YYYY-MM-DD") + " 23:59:59.999+00"
-                                }
-                            };*/
-                            /*
-                            var whereStament = {
-                                created_at: {
-                                    gte: moment(new Date(filter.dt_from)).subtract(1, 'd').format("YYYY-MM-DD") + " 21:00:00.000+00",
-                                    lte: moment(new Date(filter.dt_until)).add(1, 'd').format("YYYY-MM-DD") + " 02:59:59.999+00"
-                                }
-                            };*/
 
                             var whereStament = {}
 
-                            whereStament.$or = [
-                                {
-                                    collect_date: {
-                                        gte: moment(new Date(filter.dt_from)).subtract(1, 'd').format("YYYY-MM-DD") + " 21:00:00.000+00",
-                                        lte: moment(new Date(filter.dt_until)).add(1, 'd').format("YYYY-MM-DD") + " 02:59:59.999+00"
+                            if(filter.dt_from != null || filter.dt_from != null){
+                                whereStament.$or = [
+                                    {
+                                        collect_date: {}
+                                    },
+                                    {
+                                        collect_date: null
                                     }
-                                },
-                                {
-                                    collect_date: null
-                                }
-                            ];
-                            
+                                ];
 
-                            //console.log("a:"+ JSON.stringify(whereStament));
+                                console.log(JSON.stringify(whereStament));
+
+                                if(filter.dt_from != null){
+                                    whereStament.$or[0].collect_date.gte = moment(new Date(filter.dt_from)).subtract(1, 'd').format("YYYY-MM-DD") + " 21:00:00.000+00";
+                                }
+
+                                if(filter.dt_until != null){
+                                    whereStament.$or[0].collect_date.lte = moment(new Date(filter.dt_until)).add(1, 'd').format("YYYY-MM-DD") + " 02:59:59.999+00";
+                                }
+                            }
 
                             if(filter.client_id){
                                 whereStament.client_id = parseInt(filter.client_id);
                             }
-
-                            //{"created_at":{"gte":"2021-06-01T03:00:00.000Z","lte":"2021-07-01T03:00:00.000Z"}}
-
-                            //2021-07-01 20:26:59.731+00
     
                             var off = 0;
                             if(filter.off){
