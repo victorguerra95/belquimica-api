@@ -27,6 +27,4 @@ pm2 delete "bel"
 
 pm2 start server.js --name "bel"
 
-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
-
 https://www.npmjs.com/package/expression-calculator

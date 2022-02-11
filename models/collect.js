@@ -73,7 +73,7 @@ module.exports = function(app) {
                                 ],
                                 order: [
                                     [ CollectSystem, 'index', 'ASC' ],
-                                    [ CollectSystem, CollectSystemParameter, 'id', 'ASC' ]
+                                    [ CollectSystem, CollectSystemParameter, 'index', 'ASC' ]
                                 ]
                             }).then(collect_data => {
 
@@ -220,14 +220,14 @@ module.exports = function(app) {
                                                     {
                                                         model: Parameter
                                                     }
-                                                ],
+                                                ]
                                             }
                                         ]
                                     }
                                 ],
                                 order: [
                                     [ CollectSystem, 'index', 'ASC' ],
-                                    [ CollectSystem, CollectSystemParameter, 'id', 'ASC' ]
+                                    [ CollectSystem, CollectSystemParameter, 'index', 'ASC' ]
                                 ]
                             }).then(collect_data => {
 
@@ -244,18 +244,20 @@ module.exports = function(app) {
                                             for (let index_parameter = 0; index_parameter < collect_system.collect_system_parameters.length; index_parameter++) {
                                                 let cs_parameter_c = collect_system.collect_system_parameters[index_parameter];
 
-                                                var result = await getDataReportForSystemParameter(cs_parameter_c, collect_data_edit, collect_system);
-                                                if(result.status == false){
-                                                    error = true;
-                                                    break;
-                                                }else{
+                                                if(cs_parameter_c.chart_show == true){
+                                                    var result = await getDataReportForSystemParameter(cs_parameter_c, collect_data_edit, collect_system);
+                                                    if(result.status == false){
+                                                        error = true;
+                                                        break;
+                                                    }else{
 
-                                                    if(collect_data_edit.collect_systems[index].data_report == null){
-                                                        collect_data_edit.collect_systems[index].data_report = [];
+                                                        if(collect_data_edit.collect_systems[index].data_report == null){
+                                                            collect_data_edit.collect_systems[index].data_report = [];
+                                                        }
+                                                        let new_data_report = JSON.parse(JSON.stringify(cs_parameter_c.parameter));
+                                                        new_data_report.collect_system_parameters = JSON.parse(JSON.stringify(result.data));
+                                                        collect_data_edit.collect_systems[index].data_report.push(new_data_report);
                                                     }
-                                                    let new_data_report = JSON.parse(JSON.stringify(cs_parameter_c.parameter));
-                                                    new_data_report.collect_system_parameters = JSON.parse(JSON.stringify(result.data));
-                                                    collect_data_edit.collect_systems[index].data_report.push(new_data_report);
                                                 }
                                                 
                                             }
@@ -652,7 +654,7 @@ module.exports = function(app) {
                                 ],
                                 order: [
                                     [ CollectSystem, 'index', 'ASC' ],
-                                    [ CollectSystem, CollectSystemParameter, 'id', 'ASC' ]
+                                    [ CollectSystem, CollectSystemParameter, 'index', 'ASC' ]
                                 ]
                             }).then(collect_origin => {	
 
@@ -818,7 +820,7 @@ module.exports = function(app) {
                     });
 
                     CollectSystemParameter.bulkCreate(new_parameters, {
-					    fields: ['collect_system_id', 'parameter_id','unit', 'value', 'value_graphic', 'default_value_min', 'default_value_max', 'factor_value_graphic']
+					    fields: ['collect_system_id', 'parameter_id','unit', 'value', 'value_graphic', 'default_value_min', 'default_value_max', 'factor_value_graphic', 'index', 'chart_show']
 				    }).then(new_parameters_created => {
                         resolve({status: true});
                     });
@@ -993,6 +995,7 @@ module.exports = function(app) {
                                                 for (let system_parameter_index = 0; system_parameter_index < collect_system.collect_system_parameters.length; system_parameter_index++) {
                                                     
                                                     let system_parameter = collect_system.collect_system_parameters[system_parameter_index];
+                                                    system_parameter["index"] = system_parameter_index;
 
                                                     let result = await createNewCollectSystemParameter(collect_system.id, system_parameter);
                                                     if(result.status == false){
@@ -1028,7 +1031,7 @@ module.exports = function(app) {
                                                     console.log("destroy_data: " + JSON.stringify(destroy_data));
 
                                                     CollectSystemParameter.bulkCreate(new_parameters, {
-                                                        fields: ["collect_system_id", "parameter_id", "unit", "value", "value_graphic", "default_value_min", "default_value_max", "factor_value_graphic"]
+                                                        fields: ["collect_system_id", "parameter_id", "unit", "value", "value_graphic", "default_value_min", "default_value_max", "factor_value_graphic", "index", "chart_show"]
                                                     }).then(collect_system_parameters_data => {
 
                                                         console.log("bulk");
@@ -1138,7 +1141,7 @@ module.exports = function(app) {
                         parameter_id: parameter_data.id
                     };
 
-                    var parameters_parser_arr = ["unit", "value", "value_graphic", "default_value_min", "default_value_max", "factor_value_graphic"];
+                    var parameters_parser_arr = ["unit", "value", "value_graphic", "default_value_min", "default_value_max", "factor_value_graphic", "index", "chart_show"];
                     parameters_parser_arr.forEach(param => {
                         if(collect_system_parameter_data[param] != null){
                             new_collect_system_parameter[param] = collect_system_parameter_data[param];
@@ -1411,7 +1414,7 @@ module.exports = function(app) {
                                     ],
                                     order: [
                                         [ CollectSystem, 'index', 'ASC' ],
-                                        [ CollectSystem, CollectSystemParameter, 'id', 'ASC' ]
+                                        [ CollectSystem, CollectSystemParameter, 'index', 'ASC' ]
                                     ]
                                 }).then(collect => {	
 
@@ -1642,7 +1645,7 @@ module.exports = function(app) {
                                 }
                             ],
                             order: [
-                                [ CollectSystemParameter, 'id', 'ASC' ]
+                                [ CollectSystemParameter, 'index', 'ASC' ]
                             ]
                         }).then(full_collect_system_data => {
 
@@ -1677,7 +1680,7 @@ module.exports = function(app) {
                                     }
 
                                     CollectSystemParameter.bulkCreate(parameters_new, {
-                                        fields: ['collect_system_id', 'parameter_id', 'unit', 'value', 'value_graphic', 'default_value_min', 'default_value_max', 'factor_value_graphic']
+                                        fields: ['collect_system_id', 'parameter_id', 'unit', 'value', 'value_graphic', 'default_value_min', 'default_value_max', 'factor_value_graphic', 'index', 'chart_show']
                                     }).then(collect_system_parameter_created_data => {
 
                                         CollectSystem.findOne({
@@ -1698,7 +1701,7 @@ module.exports = function(app) {
                                                 }
                                             ],
                                             order: [
-                                                [ CollectSystemParameter, 'id', 'ASC' ]
+                                                [ CollectSystemParameter, 'index', 'ASC' ]
                                             ]
                                         }).then(collect_system_data_final_result => {
 

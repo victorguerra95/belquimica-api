@@ -163,7 +163,12 @@ module.exports = function Database(app) {
 			value_graphic: Sequelize.TEXT,
 			default_value_min: Sequelize.STRING,
 			default_value_max: Sequelize.STRING,
-			factor_value_graphic: Sequelize.STRING
+			factor_value_graphic: Sequelize.STRING,
+			index: Sequelize.INTEGER,
+			chart_show: {
+				type: Sequelize.BOOLEAN,
+				defaultValue: true
+			}
 		});
 
 		// Collect, System
@@ -258,6 +263,7 @@ module.exports = function Database(app) {
 			seed(User, UserType, Client, ClientUser, Contact, System, Collect, ClientSystem, CollectSystem, Parameter, CollectSystemParameter);
 
 			//scriptInsertCollectSystemsIndex();
+			//scriptInsertCollectSystemParametersIndex();
 
 		});
 
@@ -386,6 +392,102 @@ module.exports = function Database(app) {
 							id: collect_system_id
 						}
 					}).then(collect_system_update => {
+						resolve({is_ok: true });
+					});
+	
+					
+				} catch (error) {
+					resolve({is_ok: false, error: error});
+				}
+			});
+		}
+
+		function scriptInsertCollectSystemParametersIndex(){
+
+			try {
+
+				Collect.findAll({
+					attributes: ["id"],
+					where: {},
+					include: [
+						{
+							model: CollectSystem,
+							attributes: ["id"],
+							include: [
+								{
+									model: CollectSystemParameter,
+									attributes: ["id"]
+								}
+							]
+						}
+					],
+					order: [
+						[ CollectSystem, 'index', 'ASC' ],
+						[ CollectSystem, CollectSystemParameter, 'id', 'ASC' ]
+					]
+				}).then(collects => {
+
+					let flow = async () => {
+
+						try {
+							
+							for (let index_collect = 0; index_collect < collects.length; index_collect++) {
+
+								let collect = collects[index_collect];
+
+								for (let index_system = 0; index_system < collect.collect_systems.length; index_system++) {
+
+									let collect_system = collect.collect_systems[index_system];
+
+									for (let index_parameter = 0; index_parameter < collect_system.collect_system_parameters.length; index_parameter++) {
+										
+										let collect_system_parameter = collect_system.collect_system_parameters[index_parameter];
+
+										var result_update_collect_system_parameter = await updateCollectSystemParameter(collect_system_parameter.id, { "index": index_parameter } );
+										console.log("result_update_collect_system_parameter: " + JSON.stringify(result_update_collect_system_parameter));
+										if(result_update_collect_system_parameter.is_ok == false){
+											throw "error index collect_system_parameter i " + index_parameter + " id " + collect_system_parameter.id + " collect_system id " + collect_system.id;
+										}
+
+									}
+
+								}
+
+							}
+
+						} catch (error) {
+							
+							console.log("ERROR FLOW scriptInsertCollectSystemsIndex: " + error);
+
+						}
+
+						return true
+					}
+					
+					flow().then((value) => {
+						console.log("scriptInsertCollectSystemsIndex: " + value);
+					});
+
+				});
+
+			} catch (error) {
+				
+				console.log("ERROR scriptInsertCollectSystemsIndex: " + error);
+
+			}
+
+		}
+
+		function updateCollectSystemParameter(collect_system_parameter_id, changes){
+			return new Promise(function (resolve, reject) {
+	
+				try {
+
+					CollectSystemParameter.update(changes, {
+						where: {
+							id: collect_system_parameter_id
+						}
+					}).then(collect_system_parameter_update => {
 						resolve({is_ok: true });
 					});
 	
