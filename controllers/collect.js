@@ -139,6 +139,21 @@ module.exports = function(app) {
 		
     }
 
+    function updateCollectSystemOrder(req, res, next) {
+        
+        const model = new Model(app);
+		model.updateCollectSystemOrder(req.firebase_uid, req.query, req.body).then(data => {
+
+            if(data.code == 200){
+                return res.status(data.code).json(utils.responseSuccess(data.response));
+            }else{
+                return res.status(data.code).json(utils.responseError(data));
+            }
+
+        }).catch(next);
+		
+    }
+
     function duplicateCollectSystem(req, res, next) {
         
         const model = new Model(app);
@@ -163,6 +178,7 @@ module.exports = function(app) {
         updateParameters,
         updateSystems,
         updateCollectSystem,
+        updateCollectSystemOrder,
         getCollectReport,
         duplicateCollectSystem
 	};

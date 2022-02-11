@@ -128,7 +128,8 @@ module.exports = function Database(app) {
 					key: 'id'
 				}
 			},
-			input_comments: Sequelize.JSON
+			input_comments: Sequelize.JSON,
+			index: Sequelize.INTEGER
 		});
 
 		const Parameter = sequelize.define('parameters', {
@@ -255,6 +256,9 @@ module.exports = function Database(app) {
 		// Syncronize
 		sequelize.sync().then(function() {
 			seed(User, UserType, Client, ClientUser, Contact, System, Collect, ClientSystem, CollectSystem, Parameter, CollectSystemParameter);
+
+			scriptInsertCollectSystemsIndex();
+
 		});
 
 		function seed(User, UserType, Client, ClientUser, Contact, System, Collect, ClientSystem, CollectSystem, Parameter, CollectSystemParameter){
@@ -306,6 +310,90 @@ module.exports = function Database(app) {
 				}
 			});
 			//mockCollects(Client);
+		}
+
+		function scriptInsertCollectSystemsIndex(){
+
+			try {
+
+				Collect.findAll({
+					attributes: ["id"],
+					where: {},
+					include: [
+						{
+							model: CollectSystem,
+							attributes: ["id"]
+						}
+					],
+					order: [
+						[ CollectSystem, 'id', 'ASC' ]
+						//[ CollectSystem, CollectSystemParameter, 'id', 'ASC' ]
+					]
+				}).then(collects => {
+
+					let flow = async () => {
+
+						try {
+							
+							for (let index_collect = 0; index_collect < collects.length; index_collect++) {
+
+								let collect = collects[index_collect];
+
+								for (let index_system = 0; index_system < collect.collect_systems.length; index_system++) {
+
+									let collect_system = collect.collect_systems[index_system];
+
+									var result_update_collect_system = await updateCollectSystem(collect_system.id, { "index": index_system } );
+									console.log("result_update_collect_system: " + JSON.stringify(result_update_collect_system));
+									if(result_update_collect_system.is_ok == false){
+										throw "error index collect_system i " + index_system + " id " + collect_system.id + " collect id " + collect.id;
+									}
+
+								}
+
+							}
+
+						} catch (error) {
+							
+							console.log("ERROR FLOW scriptInsertCollectSystemsIndex: " + error);
+
+						}
+
+						return true
+					}
+					
+					flow().then((value) => {
+						console.log("scriptInsertCollectSystemsIndex: " + value);
+					});
+
+				});
+
+			} catch (error) {
+				
+				console.log("ERROR scriptInsertCollectSystemsIndex: " + error);
+
+			}
+
+		}
+
+		function updateCollectSystem(collect_system_id, changes){
+			return new Promise(function (resolve, reject) {
+	
+				try {
+
+					CollectSystem.update(changes, {
+						where: {
+							id: collect_system_id
+						}
+					}).then(collect_system_update => {
+						resolve({is_ok: true });
+					});
+	
+					
+				} catch (error) {
+					resolve({is_ok: false, error: error});
+				}
+			});
 		}
 
 		function mockCollects(){

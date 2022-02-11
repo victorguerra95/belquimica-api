@@ -72,7 +72,7 @@ module.exports = function(app) {
                                     }
                                 ],
                                 order: [
-                                    [ CollectSystem, 'id', 'ASC' ],
+                                    [ CollectSystem, 'index', 'ASC' ],
                                     [ CollectSystem, CollectSystemParameter, 'id', 'ASC' ]
                                 ]
                             }).then(collect_data => {
@@ -226,7 +226,7 @@ module.exports = function(app) {
                                     }
                                 ],
                                 order: [
-                                    [ CollectSystem, 'id', 'ASC' ],
+                                    [ CollectSystem, 'index', 'ASC' ],
                                     [ CollectSystem, CollectSystemParameter, 'id', 'ASC' ]
                                 ]
                             }).then(collect_data => {
@@ -651,7 +651,7 @@ module.exports = function(app) {
                                     }
                                 ],
                                 order: [
-                                    [ CollectSystem, 'id', 'ASC' ],
+                                    [ CollectSystem, 'index', 'ASC' ],
                                     [ CollectSystem, CollectSystemParameter, 'id', 'ASC' ]
                                 ]
                             }).then(collect_origin => {	
@@ -800,7 +800,8 @@ module.exports = function(app) {
                 CollectSystem.create({
                     collect_id: new_collect_id,
                     system_id: collect_system_origin.system_id,
-                    input_comments: collect_system_origin.input_comments
+                    input_comments: collect_system_origin.input_comments,
+                    index: collect_system_origin.index
                 }).then(new_collect_system_created => {	
 
                     var new_parameters = collect_system_origin.collect_system_parameters.map(function(p) {
@@ -1341,6 +1342,7 @@ module.exports = function(app) {
                             let system_id = data.system_id;
 
                             let new_collect_system = { 
+                                index: data.index,
                                 collect_id: collect_id,
                                 system_id: system_id,
                                 input_comments: {
@@ -1383,7 +1385,69 @@ module.exports = function(app) {
                                     id: collect_system_id
                                 }
                             }).then(destroyData => {
-                                resolve({ code: 200, response: true });
+
+
+                                Collect.findOne({
+                                    where: {
+                                        id: collect_id
+                                    },
+                                    include: [
+                                        {
+                                            model: CollectSystem,
+                                            include: [
+                                                {
+                                                    model: System
+                                                },
+                                                {
+                                                    model: CollectSystemParameter,
+                                                    include: [
+                                                        {
+                                                            model: Parameter
+                                                        }
+                                                    ],
+                                                }
+                                            ]
+                                        }
+                                    ],
+                                    order: [
+                                        [ CollectSystem, 'index', 'ASC' ],
+                                        [ CollectSystem, CollectSystemParameter, 'id', 'ASC' ]
+                                    ]
+                                }).then(collect => {	
+
+                                    let flow = async () => {
+        
+                                        try {
+                
+                                            for (let index_system = 0; index_system < collect.collect_systems.length; index_system++) {
+            
+                                                let collect_system = collect.collect_systems[index_system];
+            
+                                                var result_update_collect_system = await updateCollectSystemOrderAsync(collect_system.id, { "index": index_system } );
+                                                console.log("result_update_collect_system: " + JSON.stringify(result_update_collect_system));
+                                                if(result_update_collect_system.is_ok == false){
+                                                    throw "error index collect_system i " + index_system + " id " + collect_system.id + " collect id " + collect.id;
+                                                }
+            
+                                                resolve({ code: 200, response: true });
+            
+                                            }
+                
+                                        } catch (error) {
+                                            
+                                            console.log("ERROR FLOW scriptInsertCollectSystemsIndex: " + error);
+                                            resolve({code: 500, message: "unexpected_error"});
+                
+                                        }
+            
+                                        return true;
+                                    }
+                                    
+                                    flow().then((value) => {
+                                        console.log("scriptInsertCollectSystemsIndex: " + value);
+                                    });
+
+                                });
                             });
                         }
 
@@ -1465,6 +1529,87 @@ module.exports = function(app) {
         });
     }
 
+    function updateCollectSystemOrder(firebase_uid, filter, data) {
+
+        return new Promise((resolve, reject) => {
+
+            try {
+
+                User.findOne({
+                    where: {
+                        firebase_uid: firebase_uid
+                    }
+                }).then(userData => {	
+
+                    if(userData != null){
+
+                        let collect_id = parseInt(filter.collect_id);
+
+                        let flow = async () => {
+        
+                            try {
+    
+                                for (let index_system = 0; index_system < data.collect_systems.length; index_system++) {
+
+                                    let collect_system = data.collect_systems[index_system];
+
+                                    var result_update_collect_system = await updateCollectSystemOrderAsync(collect_system.id, { "index": index_system } );
+                                    console.log("result_update_collect_system: " + JSON.stringify(result_update_collect_system));
+                                    if(result_update_collect_system.is_ok == false){
+                                        throw "error index collect_system i " + index_system + " id " + collect_system.id + " collect id " + collect.id;
+                                    }
+
+                                    resolve({ code: 200, response: true });
+
+                                }
+    
+                            } catch (error) {
+                                
+                                console.log("ERROR FLOW scriptInsertCollectSystemsIndex: " + error);
+                                resolve({code: 500, message: "unexpected_error"});
+    
+                            }
+
+                            return true;
+                        }
+                        
+                        flow().then((value) => {
+                            console.log("scriptInsertCollectSystemsIndex: " + value);
+                        });
+
+                    }else{
+                        resolve({code: 500, message: "unexpected_error"});
+                    }
+
+                });
+                
+            } catch (error) {
+                resolve({code: 500, message: "unexpected_error"});
+            }
+
+        });
+    }
+
+    function updateCollectSystemOrderAsync(collect_system_id, changes){
+        return new Promise(function (resolve, reject) {
+
+            try {
+
+                CollectSystem.update(changes, {
+                    where: {
+                        id: collect_system_id
+                    }
+                }).then(collect_system_update => {
+                    resolve({is_ok: true });
+                });
+
+                
+            } catch (error) {
+                resolve({is_ok: false, error: error});
+            }
+        });
+    }
+
     function duplicateCollectSystem(firebase_uid, filter) {
 
         return new Promise((resolve, reject) => {
@@ -1503,7 +1648,7 @@ module.exports = function(app) {
 
                             if(full_collect_system_data != null){
 
-                                let data_to_create_collect_system = { system_id: filter.destiny_id };
+                                let data_to_create_collect_system = { system_id: filter.destiny_id, index: filter.index };
                                 let parameters_parser_arr = ["collect_id", "input_comments"];
                                 parameters_parser_arr.forEach(param => {
                                     if(full_collect_system_data[param] != null){
@@ -1635,6 +1780,7 @@ module.exports = function(app) {
         updateParameters,
         updateSystems,
         updateCollectSystem,
+        updateCollectSystemOrder,
         getCollectReport,
         duplicateCollectSystem
 	};

@@ -48,6 +48,9 @@ module.exports = function(app) {
 		app.route('/api/private/admin/collects/updateCollectSystem')
 		.post(controllerCollect.updateCollectSystem);
 
+		app.route('/api/private/admin/collects/updateCollectSystem/order')
+		.post(controllerCollect.updateCollectSystemOrder);
+
 		app.route('/api/private/admin/collects/duplicateCollectSystem')
 		.post(controllerCollect.duplicateCollectSystem);
 

@@ -23,6 +23,10 @@ sudo rsync -av root/vgdev/belquimica-web/dist var/www/admbelquimica.vupapp.com/h
 
 sudo systemctl restart nginx
 
+pm2 delete "bel"
+
 pm2 start server.js --name "bel"
 
-pm2 delete "bel"
+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
+
+https://www.npmjs.com/package/expression-calculator
