@@ -168,7 +168,11 @@ module.exports = function Database(app) {
 			chart_show: {
 				type: Sequelize.BOOLEAN,
 				defaultValue: true
-			}
+			},
+			chart_var_a: Sequelize.STRING,
+			chart_var_b: Sequelize.STRING,
+			chart_var_c: Sequelize.STRING,
+			chart_var_d: Sequelize.STRING
 		});
 
 		// Collect, System

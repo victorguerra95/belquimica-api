@@ -816,11 +816,16 @@ module.exports = function(app) {
                             default_value_min: p.default_value_min,
                             default_value_max: p.default_value_max,
                             factor_value_graphic: p.factor_value_graphic,
+                            chart_var_a: p.chart_var_a,
+                            chart_var_b: p.chart_var_b,
+                            chart_var_c: p.chart_var_c,
+                            chart_var_d: p.chart_var_d,
+                            chart_show: p.chart_show
                         };
                     });
 
                     CollectSystemParameter.bulkCreate(new_parameters, {
-					    fields: ['collect_system_id', 'parameter_id','unit', 'value', 'value_graphic', 'default_value_min', 'default_value_max', 'factor_value_graphic', 'index', 'chart_show']
+					    fields: ['collect_system_id', 'parameter_id','unit', 'value', 'value_graphic', 'default_value_min', 'default_value_max', 'factor_value_graphic', 'index', 'chart_show', 'chart_var_a', 'chart_var_b', 'chart_var_c', 'chart_var_d']
 				    }).then(new_parameters_created => {
                         resolve({status: true});
                     });
@@ -1031,7 +1036,7 @@ module.exports = function(app) {
                                                     console.log("destroy_data: " + JSON.stringify(destroy_data));
 
                                                     CollectSystemParameter.bulkCreate(new_parameters, {
-                                                        fields: ["collect_system_id", "parameter_id", "unit", "value", "value_graphic", "default_value_min", "default_value_max", "factor_value_graphic", "index", "chart_show"]
+                                                        fields: ["collect_system_id", "parameter_id", "unit", "value", "value_graphic", "default_value_min", "default_value_max", "factor_value_graphic", "index", "chart_show", 'chart_var_a', 'chart_var_b', 'chart_var_c', 'chart_var_d']
                                                     }).then(collect_system_parameters_data => {
 
                                                         console.log("bulk");
@@ -1141,7 +1146,7 @@ module.exports = function(app) {
                         parameter_id: parameter_data.id
                     };
 
-                    var parameters_parser_arr = ["unit", "value", "value_graphic", "default_value_min", "default_value_max", "factor_value_graphic", "index", "chart_show"];
+                    var parameters_parser_arr = ["unit", "value", "value_graphic", "default_value_min", "default_value_max", "factor_value_graphic", "index", "chart_show", 'chart_var_a', 'chart_var_b', 'chart_var_c', 'chart_var_d'];
                     parameters_parser_arr.forEach(param => {
                         if(collect_system_parameter_data[param] != null){
                             new_collect_system_parameter[param] = collect_system_parameter_data[param];
@@ -1680,7 +1685,7 @@ module.exports = function(app) {
                                     }
 
                                     CollectSystemParameter.bulkCreate(parameters_new, {
-                                        fields: ['collect_system_id', 'parameter_id', 'unit', 'value', 'value_graphic', 'default_value_min', 'default_value_max', 'factor_value_graphic', 'index', 'chart_show']
+                                        fields: ['collect_system_id', 'parameter_id', 'unit', 'value', 'value_graphic', 'default_value_min', 'default_value_max', 'factor_value_graphic', 'index', 'chart_show', 'chart_var_a', 'chart_var_b', 'chart_var_c', 'chart_var_d']
                                     }).then(collect_system_parameter_created_data => {
 
                                         CollectSystem.findOne({
