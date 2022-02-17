@@ -262,6 +262,16 @@ module.exports = function Database(app) {
 		System.hasMany(ClientSystem, {foreignKey: 'system_id' });
 		ClientSystem.belongsTo(System, {foreignKey: 'system_id'});
 
+		//Files
+		const File = sequelize.define('files', {
+			name: Sequelize.TEXT,
+			type: Sequelize.TEXT,
+			url_file: Sequelize.TEXT,
+		}, tableDefaultMetadata);
+
+		File.belongsTo(Client, {onDelete: 'CASCADE'});
+		Client.hasMany(File);
+
 		// Syncronize
 		sequelize.sync().then(function() {
 			seed(User, UserType, Client, ClientUser, Contact, System, Collect, ClientSystem, CollectSystem, Parameter, CollectSystemParameter);
@@ -714,7 +724,8 @@ module.exports = function Database(app) {
 			ClientSystem,
 			CollectSystem,
 			Parameter,
-			CollectSystemParameter
+			CollectSystemParameter,
+			File
 		});
 	}
 
