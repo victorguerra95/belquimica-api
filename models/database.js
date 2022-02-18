@@ -276,8 +276,8 @@ module.exports = function Database(app) {
 		sequelize.sync().then(function() {
 			seed(User, UserType, Client, ClientUser, Contact, System, Collect, ClientSystem, CollectSystem, Parameter, CollectSystemParameter);
 
-			scriptInsertCollectSystemsIndex();
-			//scriptInsertCollectSystemParametersIndex();
+			//scriptInsertCollectSystemsIndex();
+			scriptInsertCollectSystemParametersIndex();
 
 		});
 
