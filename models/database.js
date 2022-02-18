@@ -277,7 +277,7 @@ module.exports = function Database(app) {
 			seed(User, UserType, Client, ClientUser, Contact, System, Collect, ClientSystem, CollectSystem, Parameter, CollectSystemParameter);
 
 			//scriptInsertCollectSystemsIndex();
-			scriptInsertCollectSystemParametersIndex();
+			//scriptInsertCollectSystemParametersIndex();
 
 		});
 
