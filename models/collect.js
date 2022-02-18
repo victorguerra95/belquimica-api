@@ -820,7 +820,8 @@ module.exports = function(app) {
                             chart_var_b: p.chart_var_b,
                             chart_var_c: p.chart_var_c,
                             chart_var_d: p.chart_var_d,
-                            chart_show: p.chart_show
+                            chart_show: p.chart_show,
+                            index: p.index
                         };
                     });
 
