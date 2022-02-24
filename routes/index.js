@@ -37,7 +37,7 @@ module.exports = function(app) {
 
 		//CLIENT
 		clientControllerCollect = new ClientControllerCollect(app);
-		//clientControllerFile = new ClientControllerFile(app);
+		clientControllerFile = new ClientControllerFile(app);
 
 		routesDefinitions();
 		app.use(function(err, req, res, next) {
@@ -101,8 +101,8 @@ module.exports = function(app) {
 		app.route('/api/private/client/collects/getCollectReport')
 		.get(clientControllerCollect.getCollectReport);
 
-		//app.route('/api/private/client/files')
-		//.get(clientControllerFile.getFiles);
+		app.route('/api/private/client/files')
+		.get(clientControllerFile.getFiles);
 	}
 
 	return {
