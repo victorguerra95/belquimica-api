@@ -4,17 +4,40 @@ module.exports = function(app) {
 	const utils = require('../utils/utils')(app);
 	const filesConfig = require('../utils/filesConfig')(app);
 	const ValidateParams = require('./routes_validations');
+	let validateParams;
+	
+	//USER
+	const ControllerUser = require('../controllers/user');
+
+	let controllerUser;
+
+	//ADMIN
 	const ControllerClient = require('../controllers/client');
 	const ControllerCollect = require('../controllers/collect');
-
-	let validateParams;
+	
 	let controllerClient;
 	let controllerCollect;
 
+	//CLIENT
+	const ClientControllerCollect = require('../controllers/client/collect');
+	const ClientControllerFile = require('../controllers/client/file');
+
+	let clientControllerCollect;
+	let clientControllerFile;
+
 	function setUp() {
 		validateParams = new ValidateParams(app);
+
+		//USER
+		controllerUser = new ControllerUser(app);
+		
+		//ADMIN
 		controllerClient = new ControllerClient(app);
 		controllerCollect = new ControllerCollect(app);
+
+		//CLIENT
+		clientControllerCollect = new ClientControllerCollect(app);
+		//clientControllerFile = new ClientControllerFile(app);
 
 		routesDefinitions();
 		app.use(function(err, req, res, next) {
@@ -24,6 +47,12 @@ module.exports = function(app) {
 
 	function routesDefinitions() {
 
+		//USER PRIVATE
+		app.route('/api/private/user/status')
+		.get(controllerUser.getUserStatus);
+
+		//ADMIN
+		
 		app.route('/api/private/admin/file/sign')
 		.get(controllerClient.signFile);
 
@@ -65,12 +94,15 @@ module.exports = function(app) {
 		app.route('/api/private/admin/points')
 		.get(controllerCollect.getPoints);
 
-		/*
-		app.route('/api/changeTextChallenge/:text')
-		.post(controllerExample.getStories);
-		.get(instaStoriesController.changeTextChallenge);
-		*/
+		//CLIENT
+		app.route('/api/private/client/collects')
+		.get(clientControllerCollect.getCollects);
 
+		app.route('/api/private/client/collects/getCollectReport')
+		.get(clientControllerCollect.getCollectReport);
+
+		//app.route('/api/private/client/files')
+		//.get(clientControllerFile.getFiles);
 	}
 
 	return {
