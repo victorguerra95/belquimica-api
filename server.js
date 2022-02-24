@@ -10,3 +10,5 @@ const Promise = require('promise');
 const moment = require('moment');
 
 const EventEmitter = require('events');
+
+const admin = require('firebase-admin');

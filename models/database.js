@@ -262,22 +262,65 @@ module.exports = function Database(app) {
 		System.hasMany(ClientSystem, {foreignKey: 'system_id' });
 		ClientSystem.belongsTo(System, {foreignKey: 'system_id'});
 
-		//Files
+		//File
 		const File = sequelize.define('files', {
 			name: Sequelize.TEXT,
-			type: Sequelize.TEXT,
+			uid: Sequelize.TEXT,
+			type: Sequelize.STRING,
+			size: Sequelize.BIGINT,
 			url_file: Sequelize.TEXT,
+			processed: {
+				type: Sequelize.BOOLEAN,
+				defaultValue: false
+			},
 		}, tableDefaultMetadata);
 
-		File.belongsTo(Client, {onDelete: 'CASCADE'});
-		Client.hasMany(File);
+		const ClientFile = sequelize.define('client_files', {
+			id: {
+				type: Sequelize.INTEGER,
+				primaryKey: true,
+				autoIncrement: true,
+				allowNull: false
+			},
+			client_id: {
+				type: Sequelize.INTEGER,
+				references: {
+					model: Client,
+					key: 'id'
+				}
+			},
+			file_id: {
+				type: Sequelize.INTEGER,
+				references: {
+					model: File,
+					key: 'id'
+				}
+			},
+		});
+		Client.belongsToMany(File, { through: ClientFile });
+		File.belongsToMany(Client, { through: ClientFile });
+		ClientFile.belongsTo(Client, {
+			foreignKey: {
+			  name: 'client_id'
+			},
+			onDelete: 'CASCADE'
+		});
+		Client.hasMany(ClientFile);
+		ClientFile.belongsTo(File, {
+			foreignKey: {
+			  name: 'file_id'
+			},
+			onDelete: 'CASCADE'
+		});
+		File.hasMany(ClientFile);
 
 		// Syncronize
 		sequelize.sync().then(function() {
 			seed(User, UserType, Client, ClientUser, Contact, System, Collect, ClientSystem, CollectSystem, Parameter, CollectSystemParameter);
 
 			//scriptInsertCollectSystemsIndex();
-			//scriptInsertCollectSystemParametersIndex();
+			//scriptInsertCollectSystemParametersIndex(); 
+
 
 		});
 
@@ -725,7 +768,8 @@ module.exports = function Database(app) {
 			CollectSystem,
 			Parameter,
 			CollectSystemParameter,
-			File
+			File,
+			ClientFile
 		});
 	}
 

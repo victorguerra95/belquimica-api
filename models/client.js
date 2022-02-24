@@ -8,6 +8,8 @@ module.exports = function(app) {
     const ClientSystem = app.get('models').ClientSystem;
     const ClientUser = app.get('models').ClientUser;
     const Collect = app.get('models').Collect;
+    const File = app.get('models').File;
+    const ClientFile = app.get('models').ClientFile;
 
     const Sequelize = require('sequelize');
     const Sequelizito = app.get('sequelize');
@@ -24,6 +26,8 @@ module.exports = function(app) {
     const http = require('https');
 
     const admin = require('firebase-admin');
+
+    const uuid = require("uuid");
 
     function getClients(firebase_uid, filter) {
 
@@ -864,6 +868,292 @@ module.exports = function(app) {
         });
     }
 
+    function getFiles(firebase_uid, filter) {
+
+        return new Promise((resolve, reject) => {
+
+            try {
+
+                User.findOne({
+                    where: {
+                        firebase_uid: firebase_uid
+                    }
+                }).then(userData => {	
+
+                    if(userData != null){
+                        
+                        if(filter.file_id){
+
+                            throw "error";
+
+                        }else{
+
+                            File.findAll({
+                                where: {
+                                    processed: true
+                                },
+                                include: [
+                                    {
+                                        model: ClientFile,
+                                        where: {
+                                            client_id: filter.client_id
+                                        }
+                                    }
+                                ],
+                                order: [
+                                    ["id", "DESC"]
+                                ],
+                            }).then(files => {
+                
+                                resolve({code: 200, response: files });
+
+                            });
+
+                        }
+
+                    }else{
+                        resolve({code: 500, message: "unexpected_error"});
+                    }
+
+                });
+                
+            } catch (error) {
+                resolve({code: 500, message: "unexpected_error"});
+            }
+
+        });
+    }
+
+    function createFile(firebase_uid, data) {
+
+        return new Promise((resolve, reject) => {
+
+            try {
+
+                User.findOne({
+                    where: {
+                        firebase_uid: firebase_uid
+                    }
+                }).then(userData => {	
+
+                    if(userData != null){
+
+                        let changes_to_file = {
+                            name: data.new_file.name,
+                            type: data.new_file.type,
+                            size: data.new_file.size,
+                            url_file: data.new_file.url_file,
+                            processed: true
+                        };
+
+                        File.update(changes_to_file, {
+                            where: {
+                                id: data.new_file.id
+                            }
+                        }).then(file_update => {
+                            
+                            let client_files_bulk_arr = data.clients_id.map(function(id) {
+                                return { client_id: id, file_id: data.new_file.id };
+                            });
+
+                            ClientFile.bulkCreate(client_files_bulk_arr, {
+                                fields: ['client_id', 'file_id']
+                            }).then(client_files_created => {
+                                
+                                resolve({code: 200, response: true });
+
+                            });
+
+                        });
+
+                    }else{
+                        resolve({code: 500, message: "unexpected_error"});
+                    }
+
+                });
+                
+            } catch (error) {
+                resolve({code: 500, message: "unexpected_error"});
+            }
+
+        });
+    }
+
+    function signFile(firebase_uid) {
+
+        return new Promise((resolve, reject) => {
+
+            try {
+
+                User.findOne({
+                    where: {
+                        firebase_uid: firebase_uid
+                    }
+                }).then(userData => {	
+
+                    if(userData != null){
+
+                        let flow = async () => {
+
+                            var created = false;
+                            var new_token = null;
+                            while(created == false){
+                                var result = await generateSign();
+                                console.log(JSON.stringify(result));
+                                if(result.status){
+                                    if(!result.exists){
+                                        created = true;
+                                        new_token = result.token;
+                                    }
+                                }else{
+                                    throw "unexpected_error_while";
+                                }
+                            }
+
+                            File.create({
+                                uid: new_token
+                            }).then(file_created => {
+
+                                resolve({code: 200, response: { id: file_created.id, token: new_token }  });
+
+                                return true;
+
+                            });
+
+                        }
+
+                        flow().then((result) => { });
+
+                    }else{
+                        resolve({code: 500, message: "unexpected_error"});
+                    }
+
+                })
+                
+            } catch (error) {
+                resolve({code: 500, message: "unexpected_error"});
+            }
+
+        });
+    }
+
+    function generateSign(){
+        return new Promise((resolve, reject) => {
+            try {
+
+                var token = uuid.v4();
+
+                File.count({
+                    where: {
+                        uid: token
+                    }
+                }).then(c => {
+                    if(c == 0){
+                        resolve({status: true, exists: false, token: token});
+                    }else{
+                        resolve({status: true, exists: true});
+                    }
+                });
+
+            } catch (error) {
+                resolve({status: false, err: error.message});
+            }
+        });
+    }
+
+    function deleteFile(firebase_uid, filter) {
+
+        return new Promise((resolve, reject) => {
+
+            try {
+
+                User.findOne({
+                    where: {
+                        firebase_uid: firebase_uid
+                    }
+                }).then(userData => {	
+
+                    if(userData != null){
+
+                        if(filter.client_id != null && filter.client_id.length > 0 && filter.file_id != null && filter.file_id.length > 0){
+
+                            ClientFile.findOne({
+                                where: {
+                                    client_id: filter.client_id,
+                                    file_id: filter.file_id
+                                },
+                                include: [
+                                    {
+                                        model: File
+                                    }
+                                ]
+                            }).then(client_file_found => {
+
+                                if(client_file_found != null){
+
+                                    ClientFile.destroy({
+                                        where: {
+                                            id: client_file_found.id
+                                        },
+                                        force: true
+                                    }).then(client_file_destroy => {
+
+                                        resolve({code: 200, response: true});
+
+                                        ClientFile.count({
+                                            where: {
+                                                file_id: filter.file_id
+                                            }
+                                        }).then(count_rest_client_files => {
+
+                                            if(count_rest_client_files == 0){
+
+                                                File.destroy({
+                                                    where: {
+                                                        id: filter.file_id
+                                                    },
+                                                    force: true
+                                                }).then(file_destroy => {
+
+                                                    let arr_name = client_file_found.file.name.split(".");
+
+                                                    let file_name = client_file_found.file.uid + "." + arr_name[arr_name.length - 1];
+
+                                                    admin.storage().bucket("belquimica-pro.appspot.com").file("client-files/"+file_name).delete();
+
+                                                });
+
+                                            }
+
+                                        });
+
+                                    });
+
+                                }else{
+                                    resolve({code: 500, message: "unexpected_error"});
+                                }
+                            });
+
+                        }else{
+
+                            resolve({code: 500, message: "unexpected_error"});
+
+                        }
+
+                    }else{
+                        resolve({code: 500, message: "unexpected_error"});
+                    }
+
+                })
+                
+            } catch (error) {
+                resolve({code: 500, message: "unexpected_error"});
+            }
+
+        });
+    }
+
+
     function formatWord (text){       
 	    text = text.toLowerCase();                     
 	    text = text.replace(new RegExp('[ÁÀÂÃ]','gi'), 'a');
@@ -909,6 +1199,10 @@ module.exports = function(app) {
         getClients,
         createClient,
         updateClient,
-        deleteClient
+        deleteClient,
+        getFiles,
+        createFile,
+        signFile,
+        deleteFile
 	};
 };

@@ -24,6 +24,14 @@ module.exports = function(app) {
 
 	function routesDefinitions() {
 
+		app.route('/api/private/admin/file/sign')
+		.get(controllerClient.signFile);
+
+		app.route('/api/private/admin/clients/files')
+		.post(controllerClient.createFile)
+		.get(controllerClient.getFiles)
+		.delete(controllerClient.deleteFile);
+
 		app.route('/api/private/admin/clients')
 		.post(controllerClient.createClient)
 		.get(controllerClient.getClients)
