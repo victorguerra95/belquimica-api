@@ -137,7 +137,7 @@ module.exports = function(app) {
 
                                 let aux_arr = JSON.parse(JSON.stringify(clients));
 
-                                let sorted_arr  = aux_arr.sort((a,b) => new moment(b.collects[0].collect_date).format('YYYYMMDDHms') - new moment(a.collects[0].collect_date).format('YYYYMMDDHms'))
+                                let sorted_arr  = aux_arr.sort((a,b) => new moment(b.collects[0].collect_date).format('YYYYMMDD') - new moment(a.collects[0].collect_date).format('YYYYMMDD'))
                 
                                 Client.count({
                                     where: whereStament,
