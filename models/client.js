@@ -134,12 +134,16 @@ module.exports = function(app) {
                                 offset: off,
                                 //limit: 30,
                             }).then(clients => {
+
+                                let aux_arr = JSON.parse(JSON.stringify(clients));
+
+                                let sorted_arr  = aux_arr.sort((a,b) => new moment(b.collects[0].collect_date).format('YYYYMMDDHms') - new moment(a.collects[0].collect_date).format('YYYYMMDDHms'))
                 
                                 Client.count({
                                     where: whereStament,
                                 }).then(count => {
 
-                                    resolve({code: 200, response: { clients: clients, count: count } });
+                                    resolve({code: 200, response: { clients: sorted_arr, count: count } });
 
                                 });
 

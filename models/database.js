@@ -321,6 +321,32 @@ module.exports = function Database(app) {
 			//scriptInsertCollectSystemsIndex();
 			//scriptInsertCollectSystemParametersIndex(); 
 
+			/*
+			let sequelize = new Sequelize(config.name, config.user, config.password, config.options);
+			app.set('sequelize', sequelize);
+            sequelize.authenticate();
+
+			//MAX(collects.collect_date) as collect_date
+            var query_s = 
+            "SELECT clients.*, MAX(collects.created_at) as collect_date " +
+            "FROM clients " + 
+            "INNER JOIN collects on clients.id = collects.client_id " + 
+			"GROUP BY clients.id, collects.client_id " + 
+            //"INNER JOIN districts dis on ads.district_id = dis.id " + 
+            //"WHERE " + where_stament + " " +
+            "ORDER BY collect_date DESC NULLS LAST";
+			
+			sequelize.query(query_s).spread((result, metadata) => {
+				//console.log(JSON.stringify(result));
+				console.log(result.length);
+				console.log(JSON.stringify(result[0]));
+				console.log(JSON.stringify(result[1]));
+				console.log(JSON.stringify(result[2]));
+				console.log(JSON.stringify(result[3]));
+				console.log(JSON.stringify(result[4]));
+				console.log(JSON.stringify(result[5]));
+				//resolve(result);
+			});*/
 
 		});
 

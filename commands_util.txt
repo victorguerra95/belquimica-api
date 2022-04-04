@@ -1,11 +1,16 @@
+DUMP DB
+
 pg_dump postgresql://postgres:'E8F!x79$fAtH$T'@143.198.237.70:5432/camiquibel-oabsdewg-regkj > camiquibel-oabsdewg-regkj.bak
 
 psql camiquibel-test < camiquibel-oabsdewg-regkj.bak
 
+-------------
+
+ADM BEL
+
 admbelquimica.vupapp.com
 
 sudo chown -R $USER:$USER /var/www/admbelquimica.vupapp.com/html
-
 
 sudo cp /etc/nginx/sites-available/default /etc/nginx/sites-available/admbelquimica.vupapp.com
 
@@ -15,13 +20,44 @@ sudo ln -s /etc/nginx/sites-available/admbelquimica.vupapp.com /etc/nginx/sites-
 
 sudo certbot --nginx -d admbelquimica.vupapp.com -d www.admbelquimica.vupapp.com
 
-
 sudo certbot --nginx -d admbelquimica.vupapp.com -d www.admbelquimica.vupapp.com
-
 
 sudo rsync -av root/vgdev/belquimica-web/dist var/www/admbelquimica.vupapp.com/html
 
 sudo systemctl restart nginx
+
+----------
+
+CLIENT BEL
+
+clientebelquimica.vupapp.com
+
+sudo mkdir -p /var/www/clientebelquimica.vupapp.com/html
+
+sudo chown -R $USER:$USER /var/www/clientebelquimica.vupapp.com/html
+
+sudo cp /etc/nginx/sites-available/default /etc/nginx/sites-available/clientebelquimica.vupapp.com
+
+sudo nano /etc/nginx/sites-available/clientebelquimica.vupapp.com
+    root /var/www/clientebelquimica.vupapp.com/html/dist;
+    server_name clientebelquimica.vupapp.com www.clientebelquimica.vupapp.com;
+
+sudo ln -s /etc/nginx/sites-available/clientebelquimica.vupapp.com /etc/nginx/sites-enabled/
+
+----> comenta cert legado dentro de sudo nano /etc/nginx/sites-available/clientebelquimica.vupapp.com
+
+sudo certbot --nginx -d clientebelquimica.vupapp.com -d www.clientebelquimica.vupapp.com
+
+sudo service nginx restart
+
+DEPLOY
+sudo rsync -av root/vgdev/belquimica-client/dist var/www/clientebelquimica.vupapp.com/html
+sudo systemctl restart nginx
+
+
+----------
+
+API
 
 pm2 delete "bel"
 
