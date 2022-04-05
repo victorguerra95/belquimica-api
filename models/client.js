@@ -137,7 +137,17 @@ module.exports = function(app) {
 
                                 let aux_arr = JSON.parse(JSON.stringify(clients));
 
-                                let sorted_arr  = aux_arr.sort((a,b) => new moment(b.collects[0].created_at).format('YYYYMMDD') - new moment(a.collects[0].created_at).format('YYYYMMDD'))
+                                //let sorted_arr  = aux_arr.sort((a,b) => b.collects.length == 0 ? -1 : new moment(b.collects[0].created_at).format('YYYYMMDD') -  a.collects.length == -1 ? 0 : new moment(a.collects[0].created_at).format('YYYYMMDD'))
+                                let sorted_arr  = aux_arr.sort(function (a,b) {
+                                    if(b.collects.length == 0){
+                                        return -1;
+                                    }else if(a.collects.length == 0){
+                                        return -1;
+                                    }else{
+                                        //return new moment(b.collects[0].created_at).format('YYYYMMDD') - new moment(a.collects[0].created_at).format('YYYYMMDD');
+                                        return b.collects[0].id -  a.collects[0].id;
+                                    }
+                                });
                 
                                 Client.count({
                                     where: whereStament,
