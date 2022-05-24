@@ -169,6 +169,51 @@ module.exports = function(app) {
 		
     }
 
+    function getCollectEmails(req, res, next) {
+        
+        const model = new Model(app);
+		model.getCollectEmails(req.firebase_uid, req.query).then(data => {
+
+            if(data.code == 200){
+                return res.status(data.code).json(utils.responseSuccess(data.response));
+            }else{
+                return res.status(data.code).json(utils.responseError(data));
+            }
+
+        }).catch(next);
+		
+    }
+
+    function createEmail(req, res, next) {
+        
+        const model = new Model(app);
+		model.createEmail(req.firebase_uid, req.body).then(data => {
+
+            if(data.code == 200){
+                return res.status(data.code).json(utils.responseSuccess(data.response));
+            }else{
+                return res.status(data.code).json(utils.responseError(data));
+            }
+
+        }).catch(next);
+		
+    }
+
+    function deleteEmail(req, res, next) {
+        
+        const model = new Model(app);
+		model.deleteEmail(req.firebase_uid, req.query).then(data => {
+
+            if(data.code == 200){
+                return res.status(data.code).json(utils.responseSuccess(data.response));
+            }else{
+                return res.status(data.code).json(utils.responseError(data));
+            }
+
+        }).catch(next);
+		
+    }
+
 	return {
         getCollects,
         getPoints,
@@ -180,6 +225,9 @@ module.exports = function(app) {
         updateCollectSystem,
         updateCollectSystemOrder,
         getCollectReport,
-        duplicateCollectSystem
+        duplicateCollectSystem,
+        getCollectEmails,
+        createEmail,
+        deleteEmail
 	};
 };

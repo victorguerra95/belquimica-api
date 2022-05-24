@@ -12,6 +12,7 @@ module.exports = function(app) {
     const CollectSystemParameter = app.get('models').CollectSystemParameter;
     const ClientUser = app.get('models').ClientUser;
     const Collect = app.get('models').Collect;
+    const Email = app.get('models').Email;
 			
 
     const Sequelize = require('sequelize');
@@ -88,7 +89,19 @@ module.exports = function(app) {
                                     ]
                                 }).then(client_systems_data => {
 
-                                    resolve({code: 200, response: { collect: collect_data, client_systems: client_systems_data } });
+                                    Email.findAll({
+                                        where: {
+                                            collect_id: filter.collect_id
+                                        },
+                                        order: [
+                                            [ 'id', 'DESC' ]
+                                        ],
+                                        limit: 1
+                                    }).then(emails => {
+    
+                                        resolve({code: 200, response: { collect: collect_data, client_systems: client_systems_data, emails: emails } });
+    
+                                    });
 
                                 });
 
@@ -1739,6 +1752,156 @@ module.exports = function(app) {
         });
     }
 
+    function getCollectEmails(firebase_uid, filter) {
+
+        return new Promise((resolve, reject) => {
+
+            try {
+
+                User.findOne({
+                    where: {
+                        firebase_uid: firebase_uid
+                    }
+                }).then(userData => {	
+
+                    if(userData != null){
+                        
+                        if(filter.collect_id){
+
+                            Email.findAll({
+                                where: {
+                                    collect_id: filter.collect_id
+                                },
+                                order: [
+                                    [ 'id', 'DESC' ],
+                                ]
+                            }).then(data => {
+
+                                resolve({code: 200, response: data });
+
+                            });
+
+                        }else{
+
+                            resolve({code: 500, message: "unexpected_error"});    
+
+                        }
+
+                    }else{
+                        resolve({code: 500, message: "unexpected_error"});
+                    }
+
+                });
+                
+            } catch (error) {
+                resolve({code: 500, message: "unexpected_error"});
+            }
+
+        });
+    }
+
+    function createEmail(firebase_uid, body) {
+
+        return new Promise((resolve, reject) => {
+
+            try {
+
+                User.findOne({
+                    where: {
+                        firebase_uid: firebase_uid
+                    }
+                }).then(userData => {	
+
+                    if(userData != null){
+                        
+                        Email.create({
+                            collect_id: body.collect_id,
+                            date: moment().add(30, "minutes").toDate()
+                        }).then(data => {
+
+                            resolve({code: 200, response: data });
+
+                        });
+
+                    }else{
+                        resolve({code: 500, message: "unexpected_error"});
+                    }
+
+                });
+                
+            } catch (error) {
+                resolve({code: 500, message: "unexpected_error"});
+            }
+
+        });
+    }
+
+    function deleteEmail(firebase_uid, filter) {
+
+        return new Promise((resolve, reject) => {
+
+            try {
+
+                User.findOne({
+                    where: {
+                        firebase_uid: firebase_uid
+                    }
+                }).then(userData => {	
+
+                    if(userData != null){
+                        
+                        if(filter.email_id){
+
+                            Email.findOne({
+                                where: {
+                                    id: parseInt(filter.email_id)
+                                },
+                            }).then(email_found => {	
+
+                                Email.destroy({
+                                    where: {
+                                        id: email_found.id
+                                    },
+                                    force: true
+                                }).then(removeData => {	
+    
+                                    Email.findAll({
+                                        where: {
+                                            collect_id: email_found.collect_id
+                                        },
+                                        order: [
+                                            [ 'id', 'DESC' ]
+                                        ],
+                                        limit: 1
+                                    }).then(emails => {
+        
+                                        resolve({code: 200, response: emails });
+        
+                                    });
+    
+                                });
+
+                            });
+
+                        }else{
+
+                            resolve({code: 500, message: "unexpected_error"});    
+
+                        }
+
+                    }else{
+                        resolve({code: 500, message: "unexpected_error"});
+                    }
+
+                });
+                
+            } catch (error) {
+                resolve({code: 500, message: "unexpected_error"});
+            }
+
+        });
+    }
+
     function formatWord (text){       
 	    text = text.toLowerCase();                     
 	    text = text.replace(new RegExp('[ÁÀÂÃ]','gi'), 'a');
@@ -1791,6 +1954,9 @@ module.exports = function(app) {
         updateCollectSystem,
         updateCollectSystemOrder,
         getCollectReport,
-        duplicateCollectSystem
+        duplicateCollectSystem,
+        getCollectEmails,
+        createEmail,
+        deleteEmail
 	};
 };

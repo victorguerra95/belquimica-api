@@ -314,6 +314,24 @@ module.exports = function Database(app) {
 		});
 		File.hasMany(ClientFile);
 
+		//Email
+		const Email = sequelize.define('emails', {
+			date: Sequelize.DATE,
+			sent: {
+				type: Sequelize.BOOLEAN,
+				defaultValue: false
+			},
+			sent_date: Sequelize.DATE,
+			error: {
+				type: Sequelize.BOOLEAN,
+				defaultValue: false
+			},
+			error_text: Sequelize.TEXT
+		}, tableDefaultMetadata);
+
+		Email.belongsTo(Collect, {onDelete: 'CASCADE'});
+		Collect.hasMany(Email);
+
 		// Syncronize
 		sequelize.sync().then(function() {
 			seed(User, UserType, Client, ClientUser, Contact, System, Collect, ClientSystem, CollectSystem, Parameter, CollectSystemParameter);
@@ -795,7 +813,8 @@ module.exports = function Database(app) {
 			Parameter,
 			CollectSystemParameter,
 			File,
-			ClientFile
+			ClientFile,
+			Email
 		});
 	}
 
