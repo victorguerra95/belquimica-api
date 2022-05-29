@@ -335,46 +335,7 @@ module.exports = function Database(app) {
 		// Syncronize
 		sequelize.sync().then(function() {
 			seed(User, UserType, Client, ClientUser, Contact, System, Collect, ClientSystem, CollectSystem, Parameter, CollectSystemParameter);
-
-			const nodemailer = require('nodemailer');
-
-			async function main() {
-				// Generate test SMTP service account from ethereal.email
-				// Only needed if you don't have a real mail account for testing
-				let testAccount = await nodemailer.createTestAccount();
-
-				// create reusable transporter object using the default SMTP transport
-				let transporter = nodemailer.createTransport({
-					host: "smtp.zoho.com",
-					port: 465,
-					secure: true, // true for 465, false for other ports
-					auth: {
-						user: "caioconstrucoes95@zohomail.com", // generated ethereal user
-						pass: "Qsam2xJKMevN9pRQ", // generated ethereal password
-					},
-				});
-
-				// send mail with defined transport object
-				let info = await transporter.sendMail({
-					from: '"Rabi Notification" <caioconstrucoes95@zohomail.com>', // sender address
-					to: "victor.guerra007@gmail.com", // list of receivers
-					subject: "Rabi Notification " + moment().format("DD-MM-YYYY HH:mm"), // Subject line
-					//text: "ola macho", // plain text body,
-					html: '<!doctype html><html> <head> <meta http-equiv="Content-Type" content="text/html charset=UTF-8"/> </head> <body> <center> <div style="width: fit-content;background-color: white;height: 100%;padding-left: 50px;padding-right: 50px;"> <table style="border-collapse: collapse;max-width: 520px;background-color: white;"> <tbody> <tr> <td style="border: 1px solid black;text-align: center;"> <img src="https://admbelquimica.vupapp.com/images/logo.png" width="110px" height="80px"> </td><td style="border: 1px solid black"> <p style="font-weight: 700;text-align: center;">Acompanhamento Online</p><p style="font-weight: 700;text-align: center;">– Relatório De Análises –</p></td></tr><tr> <td colspan="2" style="border: 1px solid black" > <p style="font-weight: 700;color: #016600;text-align: center;margin-left: 20px;margin-right: 20px;">BELQUIMICA PRODUTOS E ASSISTÊNCIA TÉCNICA LTDA.</p></td></tr><tr> <td colspan="2" style="border: 1px solid black;background-color: #339a65;"> <p style="font-weight: 700;color: white;text-align: center;">www.belquimica.ind.br</p></td></tr><tr> <td colspan="2"> <div style="height: 10px"></div></td></tr><tr> <td colspan="2"> <p style="color: #385623;margin-bottom: 5px;"> Prezado Cliente, </p></td></tr><tr> <td colspan="2"> <p style="color: #385623;margin-bottom: 5px;"> Informamos que foi disponibilizado no portal “Área do Cliente” um novo Relatório de Análise; segue também em anexo. </p></td></tr><tr> <td colspan="2"> <p style="color: #385623;margin-bottom: 5px;"> O portal “Área do Cliente” permite o acesso ágil aos últimos Relatórios de Análise enviados e comporta ainda um diretório onde poderemos anexar documentos relevantes, ficando também, disponíveis para consultas futuras. </p></td></tr><tr> <td colspan="2"> <p style="color: #385623;margin-bottom: 12px;"> O portal “Área do Cliente” está disponível pelo link e QR Code abaixo: </p></td></tr><tr> <td colspan="2"> <a href="https://clientebelquimica.vupapp.com/">https://clientebelquimica.vupapp.com/</a> </td></tr><tr> <td colspan="2"> <div style="height: 20px"></div></td></tr><tr> <td colspan="2"> <p style="color: #385623;margin-bottom: 12px;"> Caso ainda não disponha de login e senha para acesso, gentileza solicitar ao e-mail abaixo: </p></td></tr><tr> <td colspan="2"> <a href="mailto:laboratorio@belquimica.ind.br">laboratorio@belquimica.ind.br/</a> </td></tr><tr> <td colspan="2"> <div style="height: 20px"></div></td></tr><tr> <td colspan="2"> <p style="color: #385623;margin-bottom: 12px;"> Não responda este e-mail. Caso deseje entrar em contato, gentileza responder ao e-mail abaixo: </p></td></tr><tr> <td colspan="2"> <a href="mailto:laboratorio@belquimica.ind.br">laboratorio@belquimica.ind.br/</a> </td></tr><tr> <td colspan="2"> <div style="height: 20px"></div></td></tr><tr> <td colspan="2"> <p style="color: #385623;margin-bottom: 5px;"> Desde já agradecemos e permanecemos à disposição. </p></td></tr><tr> <td colspan="2"> <p style="color: #385623;margin-bottom: 5px;"> Atenciosamente, </p></td></tr><tr> <td colspan="2"> <div style="height: 5px"></div></td></tr><tr> <td colspan="2"> <p style="color: #385623;margin-bottom: 0px;"> Equipe Belquimica </p><p style="color: #385623;margin-bottom: 0px;margin-top: 5px;font-size: 13px;"> Belquimica Produtos e Assistência Técnica Ltda. </p><p style="color: #385623;margin-bottom: 0px;margin-top: 5px;font-size: 13px;"> www.belquimica.ind.br </p></td></tr><tr> <td colspan="2"> <div style="height: 15px"></div></td></tr></tbody> </table> </div></center> <style>body{font-family: Arial, Helvetica, sans-serif; background-color: #FAFAFA;}</style> </body></html>'
-				});
-
-				console.log("Message sent: %s", info.messageId);
-				// Message sent: <b658f8ca-6296-ccf4-8306-87d57a0b4321@example.com>
-
-				// Preview only available when sending through an Ethereal account
-				console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
-				// Preview URL: https://ethereal.email/message/WaQKMgKddxQDoou...
-
-				//let jobStatusHealthCrawlers = schedule.scheduleJob('jobStatusHealthCrawlers', moment(new Date()).add(8,"hours").toDate(), checkHealthCrawlers);
-				//console.log("jobStatusHealthCrawlers: " + jobStatusHealthCrawlers.nextInvocation());
-			}
-
-			main().catch(console.error);
+			startCrawlers();
 
 			//scriptInsertCollectSystemsIndex();
 			//scriptInsertCollectSystemParametersIndex(); 
@@ -407,6 +368,174 @@ module.exports = function Database(app) {
 			});*/
 
 		});
+
+		function startCrawlers(){
+			let ip = require("ip");
+			if(ip.address() === "143.198.237.70"){
+				console.log("prod");
+
+				let jobList = schedule.scheduledJobs;
+				console.log("schedule.scheduledJobs: " + JSON.stringify(jobList));
+				for(jobName in jobList){
+					let job = 'jobList.' + jobName;
+					eval(job+'.cancel()');
+				}
+
+				let key = Object.keys(schedule.scheduledJobs)[0];
+				if(!key){
+					let jobStartCrawlers = schedule.scheduleJob('jobSendEmailsNotification', '*/30 * * * *', sendEmailsNotification);
+					console.log("jobSendEmailsNotification: " + jobStartCrawlers.nextInvocation());
+				};	
+			}else{
+				console.log("local");
+			}
+		}
+
+		let sendEmailsNotification = function(){
+			let flow = async () => {
+
+				console.log("start sendEmailsNotification");
+
+				let emails = await Email.findAll({
+					where: {
+						sent: false,
+						error: false,
+						date: {
+							lte: moment().toDate()
+						}
+					},
+					include: [
+						{
+							model: Collect,
+							include: [
+								{
+									model: Client,
+									include: [
+										{
+											model: Contact
+										}
+									]
+								}
+							]
+						}
+					]
+				});
+
+				console.log("emails to send: " + emails.length);
+
+				for (let index = 0; index < emails.length; index++) {
+					let email = emails[index];
+					console.log("\n\nindex: " + index + " de "+ emails.length);
+					console.log(JSON.stringify(email));
+
+					try {
+						
+						let send_email_result = await sendEmail(email);
+						console.log("send_email_result: " + JSON.stringify(send_email_result));
+
+						if(send_email_result.is_ok == false){
+
+							await Email.update({error: true, error_text: send_email_result.message, sent_date: moment().toDate()}, {
+								where: {
+									id: email.id
+								}
+							});
+
+						}else{
+
+							await Email.update({sent: true, error: false, sent_date: moment().toDate()}, {
+								where: {
+									id: email.id
+								}
+							});
+
+						}
+
+					} catch (error) {
+						console.log("error sendEmailsNotification catch: " + error);
+						await Email.update({error: true, error_text: error, sent_date: moment().toDate()}, {
+							where: {
+								id: email.id
+							}
+						});
+					}
+					
+				}
+
+			}
+			flow().then((value) => {
+				console.log("DONE sendEmailsNotification");
+			});	
+		}
+
+		function sendEmail(email) {
+			return new Promise(function (resolve, reject) {
+
+				try {
+
+					//https://www.willpeavy.com/tools/minifier/
+					const nodemailer = require('nodemailer');
+
+					//MOCK
+					//email.collect.client.contacts = [{email: "victor+bel@vupcorp.com"}, {email: "victor@belquimica.ind.br"}];
+					email.collect.client.contacts = [{email: "victor+bel@vupcorp.com"}];
+
+					if(email.collect.client.contacts == null || email.collect.client.contacts.length == 0){
+
+						console.log("sem contatos");
+						resolve({is_ok: true });
+
+					}else{
+
+						let emails_to = email.collect.client.contacts.map(function(c) {
+							return c.email;
+						});
+
+						async function main() {
+							// Generate test SMTP service account from ethereal.email
+							// Only needed if you don't have a real mail account for testing
+							let testAccount = await nodemailer.createTestAccount();
+	
+							// create reusable transporter object using the default SMTP transport
+							let transporter = nodemailer.createTransport({
+								host: "smtp.zoho.com",
+								port: 465,
+								secure: true, // true for 465, false for other ports
+								auth: {
+									user: "belquimicadev@zohomail.com", // generated ethereal user
+									pass: "belquimicadev@12", // generated ethereal password
+								},
+							});
+	
+							// send mail with defined transport object
+							let info = await transporter.sendMail({
+								from: '"Cliente Belquimica" <belquimicadev@zohomail.com>', // sender address
+								to: emails_to.toString(), // list of receivers
+								subject: "Acompanhamento Online Belquimica - " + email.collect.client.name, // Subject line
+								html: '<!doctype html><html> <head> <meta http-equiv="Content-Type" content="text/html charset=UTF-8"/> </head> <body> <center> <div style="width: fit-content;background-color: white;height: 100%;padding-left: 50px;padding-right: 50px;"> <table style="border-collapse: collapse;max-width: 520px;background-color: white;"> <tbody> <tr> <td style="border: 1px solid black;text-align: center;"> <img src="https://admbelquimica.vupapp.com/images/logo.png" width="110px" height="80px"> </td><td style="border: 1px solid black"> <p style="font-weight: 700;text-align: center;">Acompanhamento Online</p><p style="font-weight: 700;text-align: center;">– Relatório De Análises –</p></td></tr><tr> <td colspan="2" style="border: 1px solid black" > <p style="font-weight: 700;color: #016600;text-align: center;margin-left: 20px;margin-right: 20px;">BELQUIMICA PRODUTOS E ASSISTÊNCIA TÉCNICA LTDA.</p></td></tr><tr> <td colspan="2" style="border: 1px solid black;background-color: #339a65;"> <p style="font-weight: 700;color: white;text-align: center;">www.belquimica.ind.br</p></td></tr><tr> <td colspan="2"> <div style="height: 10px"></div></td></tr><tr> <td colspan="2"> <p style="color: #385623;margin-bottom: 5px;"> Prezado Cliente, </p></td></tr><tr> <td colspan="2"> <p style="color: #385623;margin-bottom: 5px;"> Informamos que foi disponibilizado no portal “Área do Cliente” um novo Relatório de Análise; segue também em anexo. </p></td></tr><tr> <td colspan="2"> <p style="color: #385623;margin-bottom: 5px;"> O portal “Área do Cliente” permite o acesso ágil aos últimos Relatórios de Análise enviados e comporta ainda um diretório onde poderemos anexar documentos relevantes, ficando também, disponíveis para consultas futuras. </p></td></tr><tr> <td colspan="2"> <p style="color: #385623;margin-bottom: 12px;"> O portal “Área do Cliente” está disponível pelo link e QR Code abaixo: </p></td></tr><tr> <td colspan="2"> <a href="https://clientebelquimica.vupapp.com/">https://clientebelquimica.vupapp.com/</a> </td></tr><tr> <td colspan="2"> <div style="height: 20px"></div></td></tr><tr> <td colspan="2"> <p style="color: #385623;margin-bottom: 12px;"> Caso ainda não disponha de login e senha para acesso, gentileza solicitar ao e-mail abaixo: </p></td></tr><tr> <td colspan="2"> <a href="mailto:laboratorio@belquimica.ind.br">laboratorio@belquimica.ind.br/</a> </td></tr><tr> <td colspan="2"> <div style="height: 20px"></div></td></tr><tr> <td colspan="2"> <p style="color: #385623;margin-bottom: 12px;"> Não responda este e-mail. Caso deseje entrar em contato, gentileza responder ao e-mail abaixo: </p></td></tr><tr> <td colspan="2"> <a href="mailto:laboratorio@belquimica.ind.br">laboratorio@belquimica.ind.br/</a> </td></tr><tr> <td colspan="2"> <div style="height: 20px"></div></td></tr><tr> <td colspan="2"> <p style="color: #385623;margin-bottom: 5px;"> Desde já agradecemos e permanecemos à disposição. </p></td></tr><tr> <td colspan="2"> <p style="color: #385623;margin-bottom: 5px;"> Atenciosamente, </p></td></tr><tr> <td colspan="2"> <div style="height: 5px"></div></td></tr><tr> <td colspan="2"> <p style="color: #385623;margin-bottom: 0px;"> Equipe Belquimica </p><p style="color: #385623;margin-bottom: 0px;margin-top: 5px;font-size: 13px;"> Belquimica Produtos e Assistência Técnica Ltda. </p><p style="color: #385623;margin-bottom: 0px;margin-top: 5px;font-size: 13px;"> www.belquimica.ind.br </p></td></tr><tr> <td colspan="2"> <div style="height: 15px"></div></td></tr></tbody> </table> </div></center> <style>body{font-family: Arial, Helvetica, sans-serif; background-color: #FAFAFA;}</style> </body></html>'
+							});
+	
+							console.log("Message sent: %s", info.messageId);
+							console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+	
+							resolve({is_ok: true });
+						}
+	
+						//main().catch(console.error);
+						main().catch(function (err){
+							console.log("error sendEmail catch: " + err);
+							resolve({is_ok: false, message: err});
+						});
+
+					}
+
+				} catch (error) {
+					console.log("error try: " + error);
+					resolve({is_ok: false, message: error});
+				}
+				
+			});
+		}
 
 		function seed(User, UserType, Client, ClientUser, Contact, System, Collect, ClientSystem, CollectSystem, Parameter, CollectSystemParameter){
 			UserType.count().then(c => {
