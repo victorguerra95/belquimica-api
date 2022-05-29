@@ -477,8 +477,8 @@ module.exports = function Database(app) {
 					const nodemailer = require('nodemailer');
 
 					//MOCK
-					//email.collect.client.contacts = [{email: "victor+bel@vupcorp.com"}, {email: "victor@belquimica.ind.br"}];
-					email.collect.client.contacts = [{email: "victor+bel@vupcorp.com"}];
+					email.collect.client.contacts = [{email: "victor+bel@vupcorp.com"}, {email: "victor@belquimica.ind.br"}];
+					//email.collect.client.contacts = [{email: "victor+bel@vupcorp.com"}];
 
 					if(email.collect.client.contacts == null || email.collect.client.contacts.length == 0){
 
